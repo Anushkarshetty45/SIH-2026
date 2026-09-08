@@ -11,9 +11,6 @@
       "@rhcp/config": ["packages/config/src/index.ts"]
     }
   },
-  "references": [
-    { "path": "./apps/api" }
-  ],
   "exclude": [
     "node_modules",
     "dist",

@@ -6,6 +6,6 @@ This workspace contains the React Native mobile application for the Rural Health
 
 **Status:** Not yet initialized.
 
-Developer 4 is responsible for this application.
+Developer 4 (Anushka and Dheeraj) are responsible for this application.
 
 Do not modify this directory unless you are Developer 4 or the task explicitly requires cross-team coordination.

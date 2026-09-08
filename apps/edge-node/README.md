@@ -8,6 +8,6 @@ The edge node operates as a local cache and sync relay in low-connectivity envir
 
 **Status:** Not yet initialized.
 
-Developer 3 is responsible for this component.
+Developer 3(Rakshita) is responsible for this component.
 
 Do not modify this directory unless you are Developer 3 or the task explicitly requires cross-team coordination.

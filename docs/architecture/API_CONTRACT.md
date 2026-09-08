@@ -136,3 +136,76 @@ All secured endpoints require Bearer JWT header:
 |---|---|---|---|
 | `GET` | `/audit` | Admin | List system audit trails |
 | `GET` | `/audit/entity/:entity/:entityId` | Doctor / Admin | Get audit trail for specific record |
+
+---
+
+## 12. Beds Module (`/beds`, `/facilities/:facilityId/beds`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/beds` | Facility Staff / Admin | Register a new bed in facility |
+| `POST` | `/beds/batch` | Facility Staff / Admin | Batch instantiate beds for a ward/category |
+| `PATCH` | `/beds/:id` | Staff / Doctor / Admin | Update bed status (AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE, UNAVAILABLE) |
+| `GET` | `/beds` | Authenticated | List beds with ward/category/status filters |
+| `GET` | `/beds/stale` | Staff / Doctor / Admin | Query facilities with stale bed data (> 120m) for D3 escalation |
+| `GET` | `/beds/emergency-availability` | Authenticated | Emergency bed availability (ICU/Oxygen/Ventilator) with conservative staleness warnings |
+| `GET` | `/beds/:id` | Authenticated | Get bed details by ID |
+| `GET` | `/facilities/:facilityId/beds` | Authenticated | Facility bed capacity summary by category + freshness status |
+
+---
+
+## 13. Equipment Module (`/equipment`, `/facilities/:facilityId/equipment`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/equipment` | Facility Staff / Admin | Register medical equipment at facility |
+| `PATCH` | `/equipment/:id` | Facility Staff / Admin | Update operational status, total, and available quantities |
+| `GET` | `/equipment` | Authenticated | List equipment with category/status filters |
+| `GET` | `/equipment/stale` | Staff / Doctor / Admin | Query facilities with stale equipment data (> 120m) for D3 escalation |
+| `GET` | `/equipment/:id` | Authenticated | Get equipment details by ID |
+| `GET` | `/facilities/:facilityId/equipment` | Authenticated | Get all equipment for a facility including operational counts and freshness |
+
+---
+
+## 14. Medicine Catalog Module (`/medicines`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/medicines` | Staff / Admin | Register a medicine in master catalog |
+| `GET` | `/medicines` | Authenticated | Search and list medicines with pagination & category filters |
+| `GET` | `/medicines/:id` | Authenticated | Get medicine details and primary alternatives |
+| `PATCH` | `/medicines/:id` | Staff / Admin | Update medicine catalog details |
+| `POST` | `/medicines/:id/alternatives` | Staff / Admin | Register controlled deterministic alternative medicine link |
+| `GET` | `/medicines/:id/alternatives` | Authenticated | Get controlled alternatives and deterministic generic equivalents (supports `?facilityId=...` for live stock) |
+| `DELETE` | `/medicines/:id/alternatives/:altId` | Staff / Admin | Remove controlled alternative mapping |
+
+---
+
+## 15. Medicine Inventory Module (`/inventory`, `/facilities/:facilityId/inventory`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/inventory/intake` | Staff / Admin | Concurrency-safe stock intake/receipt with 2G `idempotencyKey` retry support |
+| `POST` | `/inventory/adjust` | Staff / Admin | Concurrency-safe adjustment (ISSUE/decrement, RECEIPT/increment, or physical count sync) |
+| `GET` | `/inventory/check` | Authenticated | Single medicine prescription-time check (`facilityId`, `medicineId`) with freshness & alternatives |
+| `POST` | `/inventory/check-prescription` | Authenticated | Multi-item prescription check with fulfillment status and deterministic alternatives |
+| `POST` | `/inventory/import` | Staff / Admin | Structured batch inventory import with row-level validation and 2G retry idempotency |
+| `GET` | `/inventory/stale` | Staff / Admin | Domain escalation detection: Query stale inventories (> threshold) for D3 |
+| `GET` | `/facilities/:facilityId/inventory` | Authenticated | Paginated inventory with summary stats and facility-wide freshness |
+| `GET` | `/facilities/:facilityId/inventory/:medicineId` | Authenticated | Single medicine stock at facility with recent transaction history |
+
+---
+
+## 16. Prescriptions Module (`/prescriptions`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/prescriptions/check-availability` | Authenticated | Prescription-time multi-item availability check delegating to Inventory domain |
+
+---
+
+## 17. Freshness & Escalation Module (`/freshness`) — D3 Integration Contract
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/freshness/facility/:facilityId` | Authenticated | Unified operational freshness profile across beds, equipment, and inventory with life-critical warnings |
+| `GET` | `/freshness/stale-records` | Staff / Doctor / Admin | Filterable stale records across operational domains (`?resourceType=ALL\|BEDS\|EQUIPMENT\|INVENTORY`) |
+| `GET` | `/freshness/escalations` | Staff / Doctor / Admin | Domain escalation batches for D3 (BullMQ/Scheduler/Notification worker), segmented into Tier 1 (Facility Admin) and Tier 2 (District Authority / Dean) |
+| `POST` | `/freshness/trigger-events` | Admin | Explicitly emit domain escalation events to `NotificationsService` for D3 real-time listeners |
+
+
+

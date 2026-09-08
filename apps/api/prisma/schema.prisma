@@ -90,6 +90,44 @@ enum TransportStatus {
   CANCELLED
 }
 
+enum BedCategory {
+  GENERAL
+  ICU
+  OXYGEN
+  VENTILATOR
+  MATERNITY
+  PEDIATRIC
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+  UNAVAILABLE
+}
+
+enum EquipmentStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  DEFECTIVE
+  UNAVAILABLE
+}
+
+enum StockTransactionType {
+  RECEIPT
+  ISSUE
+  ADJUSTMENT
+  CORRECTION
+}
+
+enum StockStatus {
+  AVAILABLE
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // User
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,6 +152,10 @@ model User {
   AuditLogs           AuditLog[]
   AmbulanceOps        Ambulance[]
   PatientRegistrations Patient[]          @relation("PatientRegisteredBy")
+  UpdatedBeds         Bed[]               @relation("BedUpdatedBy")
+  UpdatedEquipment    Equipment[]         @relation("EquipmentUpdatedBy")
+  UpdatedStocks       MedicineStock[]     @relation("StockUpdatedBy")
+  CreatedStockTx      StockTransaction[]  @relation("StockTransactionCreatedBy")
 
   @@map("users")
 }
@@ -145,6 +187,10 @@ model Facility {
   Appointments        Appointment[]
   Ambulances          Ambulance[]
   EmergencyTransports EmergencyTransport[]
+  Beds                Bed[]
+  Equipment           Equipment[]
+  MedicineStocks      MedicineStock[]
+  ImportBatches       InventoryImportBatch[]
 
   @@map("facilities")
 }
@@ -381,3 +427,167 @@ model EmergencyTransport {
 
   @@map("emergency_transports")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bed Availability (D2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Bed {
+  id            String      @id @default(cuid())
+  facilityId    String
+  facility      Facility    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  bedNumber     String
+  ward          String
+  category      BedCategory @default(GENERAL)
+  status        BedStatus   @default(AVAILABLE)
+  lastUpdatedAt DateTime    @default(now()) @updatedAt
+  updatedById   String?
+  updatedBy     User?       @relation("BedUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+
+  @@unique([facilityId, bedNumber])
+  @@index([facilityId, status])
+  @@index([facilityId, category])
+  @@index([lastUpdatedAt])
+  @@map("beds")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Equipment Availability (D2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Equipment {
+  id                String          @id @default(cuid())
+  facilityId        String
+  facility          Facility        @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  name              String
+  category          String
+  totalQuantity     Int             @default(1)
+  availableQuantity Int             @default(1)
+  status            EquipmentStatus @default(OPERATIONAL)
+  lastUpdatedAt     DateTime        @default(now()) @updatedAt
+  updatedById       String?
+  updatedBy         User?           @relation("EquipmentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt         DateTime        @default(now())
+
+  @@unique([facilityId, name])
+  @@index([facilityId, status])
+  @@index([lastUpdatedAt])
+  @@map("equipment")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Medicine Reference Data & Inventory (D2 Milestone 2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Medicine {
+  id                     String                @id @default(cuid())
+  name                   String
+  genericName            String
+  dosageForm             String                // TABLET, SYRUP, INJECTION, CAPSULE, OINTMENT, etc.
+  strength               String                // e.g. "500mg", "250mg/5ml"
+  category               String?               // e.g. "Analgesic", "Antibiotic"
+  manufacturer           String?
+  unit                   String                @default("tablets")
+  description            String?
+  isActive               Boolean               @default(true)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  Stocks                 MedicineStock[]
+  Transactions           StockTransaction[]
+  PrimaryForAlternatives MedicineAlternative[] @relation("PrimaryMedicine")
+  AlternativeToMedicines MedicineAlternative[] @relation("AlternativeMedicine")
+
+  @@unique([name, strength, dosageForm])
+  @@index([genericName])
+  @@index([name])
+  @@map("medicines")
+}
+
+model MedicineAlternative {
+  id                    String    @id @default(cuid())
+  medicineId            String
+  alternativeMedicineId String
+  notes                 String?
+  createdAt             DateTime  @default(now())
+
+  medicine              Medicine  @relation("PrimaryMedicine", fields: [medicineId], references: [id], onDelete: Cascade)
+  alternativeMedicine   Medicine  @relation("AlternativeMedicine", fields: [alternativeMedicineId], references: [id], onDelete: Cascade)
+
+  @@unique([medicineId, alternativeMedicineId])
+  @@index([medicineId])
+  @@index([alternativeMedicineId])
+  @@map("medicine_alternatives")
+}
+
+model MedicineStock {
+  id            String             @id @default(cuid())
+  facilityId    String
+  facility      Facility           @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  medicineId    String
+  medicine      Medicine           @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  currentStock  Int                @default(0)
+  reorderLevel  Int                @default(10)
+  unit          String             @default("units")
+  batchNumber   String?
+  expiryDate    DateTime?
+  lastUpdatedAt DateTime           @default(now()) @updatedAt
+  updatedById   String?
+  updatedBy     User?              @relation("StockUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime           @default(now())
+
+  Transactions  StockTransaction[]
+
+  @@unique([facilityId, medicineId])
+  @@index([facilityId])
+  @@index([medicineId])
+  @@index([lastUpdatedAt])
+  @@map("medicine_stocks")
+}
+
+model StockTransaction {
+  id              String               @id @default(cuid())
+  facilityId      String
+  stockId         String?
+  stock           MedicineStock?       @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  medicineId      String
+  medicine        Medicine             @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  type            StockTransactionType
+  quantity        Int                  // positive for receipt, negative for issue
+  balanceAfter    Int
+  batchNumber     String?
+  expiryDate      DateTime?
+  supplier        String?
+  referenceNumber String?
+  idempotencyKey  String?
+  notes           String?
+  createdById     String?
+  createdBy       User?                @relation("StockTransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+
+  @@unique([facilityId, idempotencyKey])
+  @@index([facilityId, medicineId])
+  @@index([facilityId, createdAt])
+  @@index([createdAt])
+  @@map("stock_transactions")
+}
+
+model InventoryImportBatch {
+  id             String    @id @default(cuid())
+  facilityId     String
+  facility       Facility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  idempotencyKey String
+  totalRows      Int
+  successfulRows Int
+  failedRows     Int
+  errors         Json?
+  createdById    String?
+  createdAt      DateTime  @default(now())
+
+  @@unique([facilityId, idempotencyKey])
+  @@index([facilityId])
+  @@map("inventory_import_batches")
+}
+
+

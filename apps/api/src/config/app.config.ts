@@ -16,4 +16,15 @@ export default registerAs('app', () => ({
   redis: {
     url: process.env['REDIS_URL'] ?? 'redis://localhost:6379',
   },
+  staleThresholds: {
+    bedsMinutes: parseInt(
+      process.env['BED_STALE_THRESHOLD_MINUTES'] ||
+        process.env['AVAILABILITY_STALE_THRESHOLD_MINUTES'] ||
+        '120',
+      10,
+    ),
+    equipmentMinutes: parseInt(process.env['EQUIPMENT_STALE_THRESHOLD_MINUTES'] || '120', 10),
+    inventoryMinutes: parseInt(process.env['INVENTORY_STALE_THRESHOLD_MINUTES'] || '120', 10),
+    facilityMs: parseInt(process.env['FACILITY_STALE_THRESHOLD_MS'] || '7200000', 10),
+  },
 }));

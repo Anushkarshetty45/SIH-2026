@@ -16,6 +16,13 @@ export enum DomainEventType {
   PATIENT_REGISTERED = 'patient.registered',
   CONSENT_GRANTED = 'consent.granted',
   CONSENT_REVOKED = 'consent.revoked',
+
+  // D2 Operational Freshness & Escalation Events
+  AVAILABILITY_STALE = 'availability.stale',
+  BEDS_STALE = 'beds.stale',
+  EQUIPMENT_STALE = 'equipment.stale',
+  INVENTORY_STALE = 'inventory.stale',
+  ESCALATION_TRIGGERED = 'escalation.triggered',
 }
 
 export interface DomainEvent<T = any> {
@@ -47,4 +54,33 @@ export interface AmbulanceEventPayload {
   ambulanceId: string;
   patientId?: string;
   receivingFacilityId: string;
+}
+
+export interface StaleResourceEventPayload {
+  resourceType: 'BEDS' | 'EQUIPMENT' | 'INVENTORY';
+  facilityId: string;
+  facilityName: string;
+  district: string;
+  staleForMinutes: number;
+  thresholdMinutes: number;
+  contactPhone?: string | null;
+  hasLifeCriticalItems?: boolean;
+  itemCount?: number;
+}
+
+export interface EscalationTriggeredEventPayload {
+  escalationId: string;
+  facilityId: string;
+  facilityName: string;
+  district: string;
+  tier: 'TIER_1_FACILITY_ADMIN' | 'TIER_2_DISTRICT_AUTHORITY';
+  resourceTypes: ('BEDS' | 'EQUIPMENT' | 'INVENTORY')[];
+  maxStaleMinutes: number;
+  contactPhone?: string | null;
+  adminContact?: {
+    id: string;
+    name: string;
+    phone: string | null;
+    email: string;
+  } | null;
 }

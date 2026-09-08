@@ -1,8 +1,12 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { InventoryService } from '../inventory/inventory.service';
+import { PrescriptionAvailabilityCheckDto } from '../inventory/dto/inventory.dto';
 
-/**
- * PrescriptionsService — placeholder.
- * Business logic will be implemented in subsequent tasks.
- */
 @Injectable()
-export class PrescriptionsService {}
+export class PrescriptionsService {
+  constructor(private readonly inventoryService: InventoryService) {}
+
+  async checkAvailability(dto: PrescriptionAvailabilityCheckDto) {
+    return this.inventoryService.checkPrescriptionAvailability(dto);
+  }
+}

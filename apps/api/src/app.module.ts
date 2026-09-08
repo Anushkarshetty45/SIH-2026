@@ -17,6 +17,10 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PatientsModule } from './patients/patients.module';
 import { SyncModule } from './sync/sync.module';
 import { AuditModule } from './audit/audit.module';
+import { BedsModule } from './beds/beds.module';
+import { EquipmentModule } from './equipment/equipment.module';
+import { MedicinesModule } from './medicines/medicines.module';
+import { FreshnessModule } from './freshness/freshness.module';
 import appConfig from './config/app.config';
 
 @Module({
@@ -48,6 +52,10 @@ import appConfig from './config/app.config';
     NotificationsModule,
     SyncModule,
     AuditModule,
+    BedsModule,
+    EquipmentModule,
+    MedicinesModule,
+    FreshnessModule,
   ],
 })
 export class AppModule {}

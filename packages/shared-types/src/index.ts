@@ -4,6 +4,7 @@ export type UserRole =
   | 'ASHA_WORKER'
   | 'PHC_STAFF'
   | 'DOCTOR'
+  | 'FACILITY_STAFF'
   | 'HOSPITAL_ADMIN'
   | 'AMBULANCE_STAFF'
   | 'SUPER_ADMIN';

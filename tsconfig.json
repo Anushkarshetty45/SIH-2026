@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2021",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "@rhcp/shared-types": ["packages/shared-types/src/index.ts"],
+      "@rhcp/config": ["packages/config/src/index.ts"]
+    }
+  },
+  "references": [
+    { "path": "./apps/api" }
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts"
+  ]
+}

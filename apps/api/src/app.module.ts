@@ -14,6 +14,7 @@ import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { HealthRecordsModule } from './health-records/health-records.module';
 import { AmbulanceModule } from './ambulance/ambulance.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PatientsModule } from './patients/patients.module';
 import { SyncModule } from './sync/sync.module';
 import { AuditModule } from './audit/audit.module';
 import appConfig from './config/app.config';
@@ -31,9 +32,10 @@ import appConfig from './config/app.config';
     PrismaModule,
     HealthModule,
 
-    // Domain modules (business logic added in subsequent tasks)
+    // Domain modules
     AuthModule,
     UsersModule,
+    PatientsModule,
     FacilitiesModule,
     DoctorsModule,
     AppointmentsModule,

@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -19,9 +18,16 @@ enum UserRole {
   ASHA_WORKER
   PHC_STAFF
   DOCTOR
+  FACILITY_STAFF
   HOSPITAL_ADMIN
   AMBULANCE_STAFF
   SUPER_ADMIN
+}
+
+enum Language {
+  MARATHI
+  HINDI
+  ENGLISH
 }
 
 enum FacilityType {
@@ -37,25 +43,84 @@ enum FacilityStatus {
   INACTIVE
 }
 
+enum ConsentStatus {
+  PENDING
+  GRANTED
+  REVOKED
+}
+
+enum ReferralStatus {
+  PENDING_DOCTOR_APPROVAL
+  APPROVED
+  REJECTED
+  TIMED_OUT
+  CANCELLED
+  COMPLETED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+enum TransportStatus {
+  DISPATCHED
+  EN_ROUTE
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Core Models (foundation only — full schema added in subsequent tasks)
+// User
 // ─────────────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  phone     String?  @unique
-  name      String
-  role      UserRole
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  phone             String?   @unique
+  name              String
+  role              UserRole
+  passwordHash      String
+  refreshTokenHash  String?
+  preferredLanguage Language  @default(MARATHI)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  Doctor   Doctor?
-  Facility Facility? @relation("FacilityAdmin")
+  Doctor              Doctor?
+  AdminFacility       Facility?           @relation("FacilityAdmin")
+  Referrals           Referral[]          @relation("ReferralCreator")
+  DoctorReferrals     Referral[]          @relation("ReferralDoctor")
+  AuditLogs           AuditLog[]
+  AmbulanceOps        Ambulance[]
+  PatientRegistrations Patient[]          @relation("PatientRegisteredBy")
 
   @@map("users")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Facility
+// ─────────────────────────────────────────────────────────────────────────────
 
 model Facility {
   id            String         @id @default(cuid())
@@ -74,10 +139,19 @@ model Facility {
   lastUpdatedAt DateTime       @default(now()) @updatedAt
   createdAt     DateTime       @default(now())
 
-  Doctors Doctor[]
+  Doctors             Doctor[]
+  ReferralsFrom       Referral[]          @relation("ReferralFromFacility")
+  ReferralsTo         Referral[]          @relation("ReferralToFacility")
+  Appointments        Appointment[]
+  Ambulances          Ambulance[]
+  EmergencyTransports EmergencyTransport[]
 
   @@map("facilities")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Doctor
+// ─────────────────────────────────────────────────────────────────────────────
 
 model Doctor {
   id               String   @id @default(cuid())
@@ -91,5 +165,219 @@ model Doctor {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  Schedules    DoctorSchedule[]
+  Slots        AppointmentSlot[]
+  Appointments Appointment[]
+  Referrals    Referral[]       @relation("ReferralReceivingDoctor")
+
   @@map("doctors")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Patient
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Patient {
+  id                String        @id @default(cuid())
+  name              String
+  dateOfBirth       DateTime?
+  gender            String?
+  phone             String?
+  address           String?
+  district          String?
+  state             String?
+  /// National ABHA identifier — nullable; ABHA is optional
+  abhaId            String?       @unique
+  preferredLanguage Language      @default(MARATHI)
+  consentStatus     ConsentStatus @default(PENDING)
+  registeredById    String?
+  registeredBy      User?         @relation("PatientRegisteredBy", fields: [registeredById], references: [id])
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  Consents     Consent[]
+  Referrals    Referral[]
+  Appointments Appointment[]
+  Transports   EmergencyTransport[]
+
+  @@map("patients")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Consent
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Consent {
+  id          String        @id @default(cuid())
+  patientId   String
+  patient     Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  purpose     String        // e.g. "ABDM_LINK", "HEALTH_RECORD_SHARE", "REFERRAL"
+  status      ConsentStatus @default(PENDING)
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  expiresAt   DateTime?
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("consents")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Doctor Schedule & Slots
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DoctorSchedule {
+  id         String    @id @default(cuid())
+  doctorId   String
+  doctor     Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  facilityId String
+  dayOfWeek  DayOfWeek
+  startTime  String    // "HH:MM" format
+  endTime    String
+  slotDurationMinutes Int @default(15)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([doctorId, facilityId, dayOfWeek])
+  @@map("doctor_schedules")
+}
+
+model AppointmentSlot {
+  id         String     @id @default(cuid())
+  doctorId   String
+  doctor     Doctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  facilityId String
+  date       DateTime   @db.Date
+  startTime  String     // "HH:MM"
+  endTime    String
+  status     SlotStatus @default(AVAILABLE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  Appointment Appointment?
+
+  /// Unique: one slot per doctor per date per time
+  @@unique([doctorId, date, startTime])
+  @@index([doctorId, date, status])
+  @@map("appointment_slots")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Appointment
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Appointment {
+  id         String            @id @default(cuid())
+  patientId  String
+  patient    Patient           @relation(fields: [patientId], references: [id])
+  doctorId   String
+  doctor     Doctor            @relation(fields: [doctorId], references: [id])
+  facilityId String
+  facility   Facility          @relation(fields: [facilityId], references: [id])
+  slotId     String            @unique
+  slot       AppointmentSlot   @relation(fields: [slotId], references: [id])
+  status     AppointmentStatus @default(SCHEDULED)
+  notes      String?
+  referralId String?           @unique
+  referral   Referral?         @relation(fields: [referralId], references: [id])
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referral
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Referral {
+  id                    String         @id @default(cuid())
+  patientId             String
+  patient               Patient        @relation(fields: [patientId], references: [id])
+  createdById           String
+  createdBy             User           @relation("ReferralCreator", fields: [createdById], references: [id])
+  fromFacilityId        String
+  fromFacility          Facility       @relation("ReferralFromFacility", fields: [fromFacilityId], references: [id])
+  toFacilityId          String
+  toFacility            Facility       @relation("ReferralToFacility", fields: [toFacilityId], references: [id])
+  receivingDoctorId     String?
+  receivingDoctor       Doctor?        @relation("ReferralReceivingDoctor", fields: [receivingDoctorId], references: [id])
+  respondingDoctorId    String?
+  respondingDoctor      User?          @relation("ReferralDoctor", fields: [respondingDoctorId], references: [id])
+  status                ReferralStatus @default(PENDING_DOCTOR_APPROVAL)
+  urgency               String         @default("NORMAL") // NORMAL | HIGH | EMERGENCY
+  clinicalNotes         String?
+  rejectionReason       String?
+  timeoutAt             DateTime?
+  respondedAt           DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  Appointment Appointment?
+
+  @@index([status, timeoutAt])
+  @@index([patientId])
+  @@map("referrals")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit Log
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "REFERRAL_CREATED", "APPOINTMENT_BOOKED"
+  entity    String   // e.g. "Referral", "Appointment"
+  entityId  String
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambulance & Emergency Transport
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ambulance {
+  id                String    @id @default(cuid())
+  vehicleNumber     String    @unique
+  operatorId        String
+  operator          User      @relation(fields: [operatorId], references: [id])
+  currentFacilityId String?
+  currentFacility   Facility? @relation(fields: [currentFacilityId], references: [id])
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  Transports EmergencyTransport[]
+
+  @@map("ambulances")
+}
+
+model EmergencyTransport {
+  id                 String          @id @default(cuid())
+  ambulanceId        String
+  ambulance          Ambulance       @relation(fields: [ambulanceId], references: [id])
+  patientId          String?
+  patient            Patient?        @relation(fields: [patientId], references: [id])
+  receivingFacilityId String
+  receivingFacility  Facility        @relation(fields: [receivingFacilityId], references: [id])
+  emergencyDetails   String?
+  status             TransportStatus @default(DISPATCHED)
+  dispatchedAt       DateTime        @default(now())
+  arrivedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@map("emergency_transports")
 }

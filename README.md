@@ -117,3 +117,4 @@ rural-healthcare-platform/
 | **D2** | Beds, equipment, medicine inventory, Excel import, prescriptions, medicine alternatives, freshness/escalation |
 | **D3** | Offline sync, Redis/BullMQ, WebSockets, notifications, Raspberry Pi, ABDM adapter, ambulance |
 | **D4** | React Native mobile application |
+# SIH-2026

@@ -1,0 +1,27 @@
+﻿{
+    "name":  "rural-healthcare-platform",
+    "version":  "0.0.1",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "pnpm --filter @rhcp/api dev",
+                    "build":  "pnpm --filter @rhcp/api build",
+                    "lint":  "pnpm --filter @rhcp/api lint",
+                    "format":  "pnpm --filter @rhcp/api format",
+                    "test":  "pnpm --filter @rhcp/api test",
+                    "test:e2e":  "pnpm --filter @rhcp/api test:e2e",
+                    "prisma:generate":  "pnpm --filter @rhcp/api prisma:generate",
+                    "prisma:migrate":  "pnpm --filter @rhcp/api prisma:migrate"
+                },
+    "engines":  {
+                    "node":  "\u003e=20.0.0",
+                    "pnpm":  "\u003e=8.0.0"
+                },
+    "pnpm":  {
+                 "onlyBuiltDependencies":  [
+                                               "@nestjs/core",
+                                               "@prisma/client",
+                                               "@prisma/engines",
+                                               "prisma"
+                                           ]
+             }
+}

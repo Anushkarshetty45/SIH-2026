@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ASHA_WORKER
+  PHC_STAFF
+  DOCTOR
+  HOSPITAL_ADMIN
+  AMBULANCE_STAFF
+  SUPER_ADMIN
+}
+
+enum FacilityType {
+  PHC
+  CHC
+  DISTRICT_HOSPITAL
+  CITY_HOSPITAL
+  PRIVATE_CLINIC
+}
+
+enum FacilityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core Models (foundation only — full schema added in subsequent tasks)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?  @unique
+  name      String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Doctor   Doctor?
+  Facility Facility? @relation("FacilityAdmin")
+
+  @@map("users")
+}
+
+model Facility {
+  id            String         @id @default(cuid())
+  name          String
+  type          FacilityType
+  status        FacilityStatus @default(ACTIVE)
+  address       String
+  district      String
+  state         String
+  pincode       String
+  latitude      Float?
+  longitude     Float?
+  contactPhone  String?
+  adminId       String?        @unique
+  admin         User?          @relation("FacilityAdmin", fields: [adminId], references: [id])
+  lastUpdatedAt DateTime       @default(now()) @updatedAt
+  createdAt     DateTime       @default(now())
+
+  Doctors Doctor[]
+
+  @@map("facilities")
+}
+
+model Doctor {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facilityId       String
+  facility         Facility @relation(fields: [facilityId], references: [id])
+  specialization   String
+  registrationNo   String   @unique
+  isAvailable      Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("doctors")
+}

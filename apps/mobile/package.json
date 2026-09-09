@@ -1,0 +1,26 @@
+{
+  "name": "@rhcp/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@rhcp/config": "workspace:*",
+    "@rhcp/shared-types": "workspace:*",
+    "axios": "^1.7.9",
+    "i18next": "^24.2.2",
+    "react": "^18.3.1",
+    "react-i18next": "^15.4.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.18",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  }
+}

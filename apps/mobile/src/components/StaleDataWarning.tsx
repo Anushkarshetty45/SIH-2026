@@ -1,5 +1,6 @@
-// Critical CareGrid Freshness & Stale Data Warning Component
+// Critical CareGrid Freshness & Stale Data Warning Component — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { FreshnessStatus } from '../types';
 
@@ -9,7 +10,7 @@ export interface StaleDataWarningProps {
   isEmergencyMode?: boolean;
   resourceName?: string;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -61,98 +62,134 @@ export const StaleDataWarning: React.FC<StaleDataWarningProps> = ({
 
   if (status === 'CURRENT') {
     return (
-      <div
-        data-testid={testID}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: Spacing.xs,
-          fontSize: Typography.fontSizes.xs,
-          color: Colors.freshness.current.text,
-          backgroundColor: Colors.freshness.current.bg,
-          border: `1px solid ${Colors.freshness.current.border}`,
-          padding: `${Spacing.xs}px ${Spacing.sm}px`,
-          borderRadius: Spacing.borderRadius.sm,
-          ...style,
-        }}
+      <View
+        testID={testID}
+        style={[styles.currentContainer, style]}
       >
-        <span aria-hidden="true">✓</span>
-        <span>Current • Updated {displayText}</span>
-      </div>
+        <Text style={styles.currentIcon} accessibilityElementsHidden={true} importantForAccessibility="no">
+          ✓
+        </Text>
+        <Text style={styles.currentText}>Current • Updated {displayText}</Text>
+      </View>
     );
   }
 
   if (status === 'STALE') {
     return (
-      <div
-        data-testid={testID}
-        role="alert"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: Spacing.xs,
-          padding: Spacing.md,
-          backgroundColor: Colors.freshness.stale.bg,
-          border: `1.5px solid ${Colors.freshness.stale.border}`,
-          borderRadius: Spacing.borderRadius.md,
-          margin: `${Spacing.sm}px 0`,
-          ...style,
-        }}
+      <View
+        testID={testID}
+        accessibilityRole="alert"
+        style={[styles.staleContainer, style]}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-          <span style={{ fontSize: 18, color: Colors.freshness.stale.icon }} aria-hidden="true">
+        <View style={styles.staleHeader}>
+          <Text style={styles.staleIcon} accessibilityElementsHidden={true} importantForAccessibility="no">
             ⚠️
-          </span>
-          <span
-            style={{
-              fontSize: Typography.fontSizes.sm,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.freshness.stale.text,
-            }}
-          >
+          </Text>
+          <Text style={styles.staleTitle}>
             STALE DATA WARNING
-          </span>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          </Text>
+          <Text style={styles.staleSubtitle}>
             (Updated {displayText})
-          </span>
-        </div>
-        <p
-          style={{
-            margin: 0,
-            fontSize: Typography.fontSizes.xs,
-            color: Colors.textPrimary,
-            lineHeight: Typography.lineHeights.normal,
-          }}
-        >
+          </Text>
+        </View>
+        <Text style={styles.staleBody}>
           {isEmergencyMode
             ? `EMERGENCY ALERT: ${resourceName} was last updated ${displayText}. Place a direct voice call to confirm availability before patient dispatch.`
             : `Notice: Bed and facility ${resourceName} was last updated ${displayText}. Status may have changed.`}
-        </p>
-      </div>
+        </Text>
+      </View>
     );
   }
 
   // UNKNOWN Status
   return (
-    <div
-      data-testid={testID}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: Spacing.xs,
-        fontSize: Typography.fontSizes.xs,
-        color: Colors.freshness.unknown.text,
-        backgroundColor: Colors.freshness.unknown.bg,
-        border: `1px solid ${Colors.freshness.unknown.border}`,
-        padding: `${Spacing.xs}px ${Spacing.sm}px`,
-        borderRadius: Spacing.borderRadius.sm,
-        ...style,
-      }}
+    <View
+      testID={testID}
+      style={[styles.unknownContainer, style]}
     >
-      <span aria-hidden="true">•</span>
-      <span>Status Unknown • No recent updates</span>
-    </div>
+      <Text style={styles.unknownIcon} accessibilityElementsHidden={true} importantForAccessibility="no">
+        •
+      </Text>
+      <Text style={styles.unknownText}>Status Unknown • No recent updates</Text>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  currentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.freshness.current.bg,
+    borderWidth: 1,
+    borderColor: Colors.freshness.current.border,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  currentIcon: {
+    color: Colors.freshness.current.text,
+    fontSize: Typography.fontSizes.xs,
+  },
+  currentText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.freshness.current.text,
+  },
+  staleContainer: {
+    flexDirection: 'column',
+    gap: Spacing.xs,
+    padding: Spacing.md,
+    backgroundColor: Colors.freshness.stale.bg,
+    borderWidth: 1.5,
+    borderColor: Colors.freshness.stale.border,
+    borderRadius: Spacing.borderRadius.md,
+    marginVertical: Spacing.sm,
+  },
+  staleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flexWrap: 'wrap',
+  },
+  staleIcon: {
+    fontSize: 18,
+    color: Colors.freshness.stale.icon,
+  },
+  staleTitle: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.freshness.stale.text,
+  },
+  staleSubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  staleBody: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textPrimary,
+    lineHeight: 18,
+  },
+  unknownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.freshness.unknown.bg,
+    borderWidth: 1,
+    borderColor: Colors.freshness.unknown.border,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  unknownIcon: {
+    color: Colors.freshness.unknown.text,
+    fontSize: Typography.fontSizes.xs,
+  },
+  unknownText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.freshness.unknown.text,
+  },
+});
 
 export default StaleDataWarning;

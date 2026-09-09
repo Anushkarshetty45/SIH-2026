@@ -1,5 +1,6 @@
-// Medical Equipment Status Card Component
+// Medical Equipment Status Card Component — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Equipment, EquipmentStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -8,7 +9,7 @@ import { StaleDataWarning } from './StaleDataWarning';
 export interface EquipmentCardProps {
   equipment: Equipment;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const EquipmentCard: React.FC<EquipmentCardProps> = ({
@@ -30,39 +31,68 @@ export const EquipmentCard: React.FC<EquipmentCardProps> = ({
   };
 
   return (
-    <div
-      data-testid={testID}
-      style={{
-        backgroundColor: Colors.surface,
-        border: `1px solid ${Colors.border}`,
-        borderRadius: Spacing.borderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.sm,
-        ...style,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xs }}>
-        <div>
-          <h4 style={{ margin: 0, fontSize: Typography.fontSizes.sm, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+    <View testID={testID} style={[styles.container, style]}>
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>
             ⚙️ {equipment.name}
-          </h4>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
+          </Text>
+          <Text style={styles.category}>
             {equipment.category}
-          </span>
-        </div>
+          </Text>
+        </View>
         <StatusBadge
           label={equipment.status.replace('_', ' ')}
           variant={getStatusVariant(equipment.status)}
         />
-      </div>
+      </View>
 
-      <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary, marginTop: Spacing.xs, marginBottom: Spacing.xs }}>
+      <Text style={styles.quantity}>
         Units: {equipment.availableQuantity} Available / {equipment.totalQuantity} Total
-      </div>
+      </Text>
 
-      <StaleDataWarning lastUpdatedAt={equipment.lastUpdatedAt} resourceName={equipment.name} />
-    </div>
+      <StaleDataWarning
+        lastUpdatedAt={equipment.lastUpdatedAt}
+        resourceName={equipment.name}
+      />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  title: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  category: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  quantity: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginVertical: Spacing.xs,
+  },
+});
 
 export default EquipmentCard;

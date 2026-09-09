@@ -1,168 +1,265 @@
-// ASHA Worker / PHC Staff Home Screen
-import React, { useState } from 'react';
+// ASHA Worker / PHC Staff Home Screen — React Native
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Colors, Spacing, Typography } from '../../theme';
 import { Button, StatusBadge, StaleDataWarning, OfflineBanner, SyncStatus } from '../../components';
 import { useAuth } from '../../context/AuthContext';
+import { useOffline } from '../../context/OfflineContext';
 import { t } from '../../i18n';
+import { AshaStackParamList } from '../../navigation/types';
 
 export const AshaHomeScreen: React.FC = () => {
   const { user, logout, switchLanguage, activeLanguage } = useAuth();
-  const [networkStatus] = useState<'ONLINE' | 'OFFLINE' | 'SYNCING' | 'SYNC_FAILED'>('ONLINE');
+  const { networkStatus, pendingCount, lastSyncedText, triggerSync } = useOffline();
+  const navigation = useNavigation<NavigationProp<AshaStackParamList>>();
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: Colors.background, paddingBottom: Spacing.xxl }}>
-      <OfflineBanner status={networkStatus} lastSyncedText="5 min ago" />
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <OfflineBanner
+        status={networkStatus}
+        lastSyncedText={lastSyncedText}
+        onRetrySync={triggerSync}
+      />
 
       {/* Top Header */}
-      <div
-        style={{
-          backgroundColor: Colors.primary,
-          color: Colors.textInverse,
-          padding: `${Spacing.lg}px ${Spacing.md}px`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: Typography.fontSizes.xs, opacity: 0.9 }}>
+      <View style={styles.header}>
+        <View style={styles.headerInfo}>
+          <Text style={styles.roleSubtext}>
             {t('roles.ASHA_WORKER')} • PHC Khed
-          </div>
-          <h2 style={{ margin: 0, fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold }}>
+          </Text>
+          <Text style={styles.userName}>
             {user?.name || 'ASHA Worker'}
-          </h2>
-        </div>
+          </Text>
+        </View>
 
-        <div style={{ display: 'flex', gap: Spacing.xs, alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => switchLanguage(activeLanguage === 'mr' ? 'en' : 'mr')}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              color: Colors.textInverse,
-              border: 'none',
-              borderRadius: Spacing.borderRadius.sm,
-              padding: `${Spacing.xs}px ${Spacing.sm}px`,
-              fontSize: Typography.fontSizes.xs,
-              cursor: 'pointer',
-            }}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => switchLanguage(activeLanguage === 'mr' ? 'en' : 'mr')}
+            style={styles.headerButton}
+            accessibilityRole="button"
           >
-            {activeLanguage === 'mr' ? 'English' : 'मराठी'}
-          </button>
-          <button
-            type="button"
-            onClick={logout}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              color: Colors.textInverse,
-              border: 'none',
-              borderRadius: Spacing.borderRadius.sm,
-              padding: `${Spacing.xs}px ${Spacing.sm}px`,
-              fontSize: Typography.fontSizes.xs,
-              cursor: 'pointer',
-            }}
+            <Text style={styles.headerButtonText}>
+              {activeLanguage === 'mr' ? 'English' : 'मराठी'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={logout}
+            style={styles.headerButton}
+            accessibilityRole="button"
           >
-            {t('auth.logout')}
-          </button>
-        </div>
-      </div>
+            <Text style={styles.headerButtonText}>
+              {t('auth.logout')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <div style={{ padding: Spacing.md }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
-          <SyncStatus status={networkStatus} pendingCount={0} lastSyncedText="10:30 AM" />
-        </div>
+      <View style={styles.body}>
+        <View style={styles.syncRow}>
+          <SyncStatus
+            status={networkStatus}
+            pendingCount={pendingCount}
+            lastSyncedText={lastSyncedText}
+          />
+        </View>
 
         {/* Primary Action Button */}
-        <div style={{ marginBottom: Spacing.lg }}>
+        <View style={styles.actionButtonContainer}>
           <Button
             title={`+ ${t('referrals.create')}`}
-            onPress={() => alert('Referral Creation Flow — Milestone 3')}
+            onPress={() => navigation.navigate('CreateReferral', {})}
             variant="primary"
           />
-        </div>
+        </View>
 
         {/* Section 1: Pending Referrals */}
-        <div
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: Spacing.borderRadius.lg,
-            border: `1px solid ${Colors.border}`,
-            padding: Spacing.md,
-            marginBottom: Spacing.md,
-          }}
+        <TouchableOpacity
+          style={styles.sectionCard}
+          onPress={() => navigation.navigate('ReferralList')}
+          activeOpacity={0.8}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm }}>
-            <h3 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
               📋 {t('referrals.title')}
-            </h3>
-            <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.primary, fontWeight: Typography.fontWeights.semibold }}>
+            </Text>
+            <Text style={styles.badgeText}>
               2 Active
-            </span>
-          </div>
+            </Text>
+          </View>
 
-          <div style={{ borderTop: `1px solid ${Colors.borderLight}`, paddingTop: Spacing.sm }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong style={{ fontSize: Typography.fontSizes.sm }}>Sunita Patil</strong>
-                <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>➔ Sub-District Hospital Manchar</div>
-              </div>
+          <View style={styles.divider}>
+            <View style={styles.referralRow}>
+              <View>
+                <Text style={styles.patientName}>Sunita Patil</Text>
+                <Text style={styles.destinationText}>➔ Sub-District Hospital Manchar</Text>
+              </View>
               <StatusBadge label={t('referrals.statusPending')} variant="pending" />
-            </div>
-            <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.status.timedOut.text, marginTop: Spacing.xs }}>
+            </View>
+            <Text style={styles.timeoutNotice}>
               ⏱ {t('referrals.timeoutNotice')}
-            </div>
-          </div>
-        </div>
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Section 2: Today's Appointments */}
-        <div
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: Spacing.borderRadius.lg,
-            border: `1px solid ${Colors.border}`,
-            padding: Spacing.md,
-            marginBottom: Spacing.md,
-          }}
+        <TouchableOpacity
+          style={styles.sectionCard}
+          onPress={() => navigation.navigate('BookAppointment', {})}
+          activeOpacity={0.8}
         >
-          <h3 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary, marginBottom: Spacing.sm }}>
+          <Text style={[styles.sectionTitle, { marginBottom: Spacing.sm }]}>
             📅 {t('appointments.title')}
-          </h3>
-          <div style={{ borderTop: `1px solid ${Colors.borderLight}`, paddingTop: Spacing.sm }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong style={{ fontSize: Typography.fontSizes.sm }}>Ramesh Shinde</strong>
-                <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>Dr. Deshmukh • 11:30 AM</div>
-              </div>
+          </Text>
+          <View style={styles.divider}>
+            <View style={styles.referralRow}>
+              <View>
+                <Text style={styles.patientName}>Ramesh Shinde</Text>
+                <Text style={styles.destinationText}>Dr. Deshmukh • 11:30 AM</Text>
+              </View>
               <StatusBadge label={t('appointments.statusConfirmed')} variant="confirmed" />
-            </div>
-          </div>
-        </div>
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Section 3: Nearby Facility Bed Availability with Stale Warning */}
-        <div
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: Spacing.borderRadius.lg,
-            border: `1px solid ${Colors.border}`,
-            padding: Spacing.md,
-          }}
+        <TouchableOpacity
+          style={styles.sectionCard}
+          onPress={() => navigation.navigate('FacilityAvailability', {})}
+          activeOpacity={0.8}
         >
-          <h3 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary, marginBottom: Spacing.sm }}>
+          <Text style={[styles.sectionTitle, { marginBottom: Spacing.sm }]}>
             🏥 {t('beds.title')} (Nearby Facilities)
-          </h3>
-          <div style={{ borderTop: `1px solid ${Colors.borderLight}`, paddingTop: Spacing.sm }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xs }}>
-              <span style={{ fontSize: Typography.fontSizes.sm, fontWeight: Typography.fontWeights.semibold }}>
+          </Text>
+          <View style={styles.divider}>
+            <View style={[styles.referralRow, { marginBottom: Spacing.xs }]}>
+              <Text style={styles.facilityTitle}>
                 Sub-District Hospital Manchar
-              </span>
+              </Text>
               <StatusBadge label="4 ICU Beds" variant="available" />
-            </div>
+            </View>
             <StaleDataWarning lastUpdatedAt={new Date(Date.now() - 35 * 60 * 1000).toISOString()} />
-          </div>
-        </div>
-      </div>
-    </div>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  contentContainer: {
+    paddingBottom: Spacing.xxl,
+  },
+  header: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  roleSubtext: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textInverse,
+    opacity: 0.9,
+  },
+  userName: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textInverse,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    alignItems: 'center',
+  },
+  headerButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: Spacing.borderRadius.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  headerButtonText: {
+    color: Colors.textInverse,
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  body: {
+    padding: Spacing.md,
+  },
+  syncRow: {
+    marginBottom: Spacing.md,
+  },
+  actionButtonContainer: {
+    marginBottom: Spacing.lg,
+  },
+  sectionCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Spacing.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  badgeText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeights.semibold,
+  },
+  divider: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingTop: Spacing.sm,
+  },
+  referralRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  patientName: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  destinationText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  timeoutNotice: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.status.timedOut.text,
+    marginTop: Spacing.xs,
+  },
+  facilityTitle: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.textPrimary,
+  },
+});
 
 export default AshaHomeScreen;

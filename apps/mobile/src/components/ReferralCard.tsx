@@ -1,7 +1,15 @@
-// Patient Referral Card Component
+// Patient Referral Card Component — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
-import { Referral, ReferralStatus, ReferralUrgency } from '../types';
+import { Referral, ReferralStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
 
 export interface ReferralCardProps {
@@ -11,7 +19,7 @@ export interface ReferralCardProps {
   onPress?: () => void;
   showDoctorActions?: boolean;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ReferralCard: React.FC<ReferralCardProps> = ({
@@ -59,102 +67,198 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
   };
 
   const isPending = referral.status === 'PENDING_DOCTOR_APPROVAL';
+  const isEmergency = referral.urgency === 'EMERGENCY';
+  const ContainerComponent = onPress ? TouchableOpacity : View;
 
   return (
-    <div
+    <ContainerComponent
       data-testid={testID}
-      onClick={onPress}
-      style={{
-        backgroundColor: Colors.surface,
-        border: `1.5px solid ${referral.urgency === 'EMERGENCY' ? Colors.emergency.border : Colors.border}`,
-        borderRadius: Spacing.borderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.md,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        cursor: onPress ? 'pointer' : 'default',
-        ...style,
-      }}
+      testID={testID}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={[
+        styles.container,
+        {
+          borderColor: isEmergency
+            ? Colors.emergency.border
+            : Colors.border,
+        },
+        style,
+      ]}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xs }}>
-        <div>
-          <h4 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>
             {referral.patient?.name || 'Patient Referral'}
-          </h4>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          </Text>
+          <Text style={styles.facilities}>
             {referral.fromFacility?.name || 'Referring PHC'} ➔ {referral.toFacility?.name || 'Receiving Facility'}
-          </span>
-        </div>
+          </Text>
+        </View>
         <StatusBadge
           label={getStatusLabel(referral.status)}
           variant={getStatusVariant(referral.status)}
         />
-      </div>
+      </View>
 
-      <div style={{ display: 'flex', gap: Spacing.md, margin: `${Spacing.xs}px 0`, fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
-        <span>Urgency: <strong style={{ color: referral.urgency === 'EMERGENCY' ? Colors.emergency.surface : Colors.textPrimary }}>{referral.urgency}</strong></span>
-        {referral.receivingDoctor && <span>Doctor: Dr. {referral.receivingDoctor.specialization}</span>}
-      </div>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaText}>
+          Urgency:{' '}
+          <Text
+            style={[
+              styles.urgencyText,
+              {
+                color: isEmergency
+                  ? Colors.emergency.surface
+                  : Colors.textPrimary,
+              },
+            ]}
+          >
+            {referral.urgency}
+          </Text>
+        </Text>
+        {referral.receivingDoctor && (
+          <Text style={styles.metaText}>
+            Doctor: Dr. {referral.receivingDoctor.specialization}
+          </Text>
+        )}
+      </View>
 
       {referral.clinicalNotes && (
-        <p style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary, margin: `${Spacing.xs}px 0`, fontStyle: 'italic' }}>
+        <Text style={styles.clinicalNotes}>
           "{referral.clinicalNotes}"
-        </p>
+        </Text>
       )}
 
       {referral.status === 'TIMED_OUT' && (
-        <div style={{ padding: Spacing.xs, backgroundColor: Colors.status.timedOut.bg, borderRadius: Spacing.borderRadius.sm, marginTop: Spacing.xs }}>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.status.timedOut.text, fontWeight: Typography.fontWeights.medium }}>
+        <View style={styles.timedOutBox}>
+          <Text style={styles.timedOutText}>
             ⏱ 30-minute doctor response window elapsed. Please reassign or select alternative facility.
-          </span>
-        </div>
+          </Text>
+        </View>
       )}
 
       {showDoctorActions && isPending && (
-        <div style={{ display: 'flex', gap: Spacing.sm, marginTop: Spacing.md }}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onApprove) onApprove();
-            }}
-            style={{
-              flex: 1,
-              minHeight: Spacing.minTouchTarget,
-              backgroundColor: Colors.primary,
-              color: Colors.textInverse,
-              border: 'none',
-              borderRadius: Spacing.borderRadius.md,
-              fontWeight: Typography.fontWeights.semibold,
-              fontSize: Typography.fontSizes.sm,
-              cursor: 'pointer',
-            }}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            onPress={onApprove}
+            style={styles.approveButton}
+            activeOpacity={0.7}
+            accessibilityRole="button"
           >
-            ✓ Approve Referral
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onReject) onReject();
-            }}
-            style={{
-              flex: 1,
-              minHeight: Spacing.minTouchTarget,
-              backgroundColor: 'transparent',
-              color: Colors.status.rejected.text,
-              border: `1.5px solid ${Colors.status.rejected.border}`,
-              borderRadius: Spacing.borderRadius.md,
-              fontWeight: Typography.fontWeights.semibold,
-              fontSize: Typography.fontSizes.sm,
-              cursor: 'pointer',
-            }}
+            <Text style={styles.approveButtonText}>✓ Approve Referral</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onReject}
+            style={styles.rejectButton}
+            activeOpacity={0.7}
+            accessibilityRole="button"
           >
-            ✕ Reject
-          </button>
-        </div>
+            <Text style={styles.rejectButtonText}>✕ Reject</Text>
+          </TouchableOpacity>
+        </View>
       )}
-    </div>
+    </ContainerComponent>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.xs,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  title: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilities: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+    marginVertical: Spacing.xs,
+  },
+  metaText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+  urgencyText: {
+    fontWeight: Typography.fontWeights.bold,
+  },
+  clinicalNotes: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginVertical: Spacing.xs,
+    fontStyle: 'italic',
+  },
+  timedOutBox: {
+    padding: Spacing.xs,
+    backgroundColor: Colors.status.timedOut.bg,
+    borderRadius: Spacing.borderRadius.sm,
+    marginTop: Spacing.xs,
+  },
+  timedOutText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.status.timedOut.text,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  approveButton: {
+    flex: 1,
+    minHeight: Spacing.minTouchTarget,
+    backgroundColor: Colors.primary,
+    borderRadius: Spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  approveButtonText: {
+    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.semibold,
+    fontSize: Typography.fontSizes.sm,
+  },
+  rejectButton: {
+    flex: 1,
+    minHeight: Spacing.minTouchTarget,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.status.rejected.border,
+    borderRadius: Spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rejectButtonText: {
+    color: Colors.status.rejected.text,
+    fontWeight: Typography.fontWeights.semibold,
+    fontSize: Typography.fontSizes.sm,
+  },
+});
 
 export default ReferralCard;

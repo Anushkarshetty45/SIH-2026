@@ -1,4 +1,7 @@
-// API Client Configuration
+// API Client Configuration — React Native & Android Aware
+import { Platform } from 'react-native';
+
+declare const process: { env: Record<string, string | undefined> };
 
 export interface ApiConfig {
   baseURL: string;
@@ -7,8 +10,22 @@ export interface ApiConfig {
   is2GMode: boolean;
 }
 
+/**
+ * Android emulator routes host machine loopback to 10.0.2.2
+ * For physical Android devices on Wi-Fi, update via setBaseURL('http://<YOUR_PC_IP>:3000/api/v1')
+ */
+const getDefaultBaseURL = (): string => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3000/api/v1';
+  }
+  return 'http://localhost:3000/api/v1';
+};
+
 export const API_CONFIG: ApiConfig = {
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000/api/v1',
+  baseURL: getDefaultBaseURL(),
   timeout: 10000, // 10s default timeout (2G-aware)
   headers: {
     'Content-Type': 'application/json',

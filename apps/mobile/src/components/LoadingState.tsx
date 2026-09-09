@@ -1,11 +1,12 @@
-// Lightweight Loading Indicator Primitive (2G Friendly)
+// Lightweight Loading Indicator Primitive — React Native (2G Friendly)
 import React from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 
 export interface LoadingStateProps {
   message?: string;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
@@ -13,39 +14,39 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   testID,
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
+  return (
+    <View
+      testID={testID}
+      accessibilityRole="progressbar"
+      style={[styles.container, style]}
+    >
+      <ActivityIndicator
+        size="small"
+        color={Colors.primary}
+        style={styles.spinner}
+      />
+      <Text style={styles.text}>{message}</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.xl,
     minHeight: 120,
     width: '100%',
-    ...style,
-  };
-
-  const spinnerStyle: React.CSSProperties = {
-    width: 28,
-    height: 28,
-    border: `3px solid ${Colors.borderLight}`,
-    borderTop: `3px solid ${Colors.primary}`,
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
+  },
+  spinner: {
     marginBottom: Spacing.md,
-  };
-
-  const textStyle: React.CSSProperties = {
+  },
+  text: {
     fontSize: Typography.fontSizes.sm,
     color: Colors.textSecondary,
     fontWeight: Typography.fontWeights.medium,
-  };
-
-  return (
-    <div style={containerStyle} data-testid={testID} role="progressbar">
-      <div style={spinnerStyle} />
-      <span style={textStyle}>{message}</span>
-    </div>
-  );
-};
+  },
+});
 
 export default LoadingState;

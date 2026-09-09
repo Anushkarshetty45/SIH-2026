@@ -1,7 +1,15 @@
-// Facility Overview Card Component
+// Facility Overview Card Component — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
-import { Facility, FacilityType } from '../types';
+import { Facility } from '../types';
 import { StaleDataWarning } from './StaleDataWarning';
 
 export interface FacilityCardProps {
@@ -10,7 +18,7 @@ export interface FacilityCardProps {
   totalBeds?: number;
   onPress?: () => void;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const FacilityCard: React.FC<FacilityCardProps> = ({
@@ -21,68 +29,108 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   testID,
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: Colors.surface,
-    border: `1px solid ${Colors.border}`,
-    borderRadius: Spacing.borderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    cursor: onPress ? 'pointer' : 'default',
-    ...style,
-  };
-
-  const headerStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
-  };
-
-  const nameStyle: React.CSSProperties = {
-    fontSize: Typography.fontSizes.md,
-    fontWeight: Typography.fontWeights.bold,
-    color: Colors.textPrimary,
-    margin: 0,
-  };
-
-  const typeBadgeStyle: React.CSSProperties = {
-    fontSize: Typography.fontSizes.xs,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.primary,
-    backgroundColor: Colors.primarySurface,
-    padding: `${Spacing.xs}px ${Spacing.sm}px`,
-    borderRadius: Spacing.borderRadius.sm,
-  };
-
-  const metaStyle: React.CSSProperties = {
-    fontSize: Typography.fontSizes.sm,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
-  };
+  const ContainerComponent = onPress ? TouchableOpacity : View;
 
   return (
-    <div style={containerStyle} onClick={onPress} data-testid={testID}>
-      <div style={headerStyle}>
-        <h3 style={nameStyle}>{facility.name}</h3>
-        <span style={typeBadgeStyle}>{facility.type}</span>
-      </div>
-      <p style={metaStyle}>
+    <ContainerComponent
+      style={[styles.container, style]}
+      onPress={onPress}
+      testID={testID}
+      activeOpacity={onPress ? 0.7 : 1}
+      accessibilityRole={onPress ? 'button' : undefined}
+    >
+      <View style={styles.header}>
+        <Text style={styles.name}>{facility.name}</Text>
+        <View style={styles.typeBadge}>
+          <Text style={styles.typeText}>{facility.type}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.meta}>
         📍 {facility.district}, {facility.state}
-      </p>
+      </Text>
 
       {totalBeds !== undefined && (
-        <div style={{ marginBottom: Spacing.sm, fontSize: Typography.fontSizes.sm }}>
-          <strong>Beds:</strong>{' '}
-          <span style={{ color: (availableBeds || 0) > 0 ? Colors.status.available.text : Colors.status.outOfStock.text }}>
+        <View style={styles.bedsRow}>
+          <Text style={styles.bedsLabel}>Beds: </Text>
+          <Text
+            style={[
+              styles.bedsValue,
+              {
+                color:
+                  (availableBeds || 0) > 0
+                    ? Colors.status.available.text
+                    : Colors.status.outOfStock.text,
+              },
+            ]}
+          >
             {availableBeds ?? 0} / {totalBeds} Available
-          </span>
-        </div>
+          </Text>
+        </View>
       )}
 
       <StaleDataWarning lastUpdatedAt={facility.lastUpdatedAt} />
-    </div>
+    </ContainerComponent>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  name: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  typeBadge: {
+    backgroundColor: Colors.primarySurface,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.sm,
+  },
+  typeText: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.primary,
+  },
+  meta: {
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  bedsRow: {
+    flexDirection: 'row',
+    marginBottom: Spacing.sm,
+    alignItems: 'center',
+  },
+  bedsLabel: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  bedsValue: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+});
 
 export default FacilityCard;

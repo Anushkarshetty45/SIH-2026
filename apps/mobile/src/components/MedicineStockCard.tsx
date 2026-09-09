@@ -1,5 +1,6 @@
-// Medicine Stock Level & Controlled Alternatives Card
+// Medicine Stock Level & Controlled Alternatives Card — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { ControlledAlternative, MedicineStock } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -9,7 +10,7 @@ export interface MedicineStockCardProps {
   stock: MedicineStock;
   alternatives?: ControlledAlternative[];
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const MedicineStockCard: React.FC<MedicineStockCardProps> = ({
@@ -34,67 +35,123 @@ export const MedicineStockCard: React.FC<MedicineStockCardProps> = ({
   };
 
   return (
-    <div
-      data-testid={testID}
-      style={{
-        backgroundColor: Colors.surface,
-        border: `1px solid ${Colors.border}`,
-        borderRadius: Spacing.borderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.md,
-        ...style,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xs }}>
-        <div>
-          <h4 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+    <View testID={testID} style={[styles.container, style]}>
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>
             💊 {stock.medicine?.name || 'Medicine'}
-          </h4>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          </Text>
+          <Text style={styles.subtitle}>
             {stock.medicine?.genericName} • {stock.medicine?.strength} ({stock.medicine?.dosageForm})
-          </span>
-        </div>
+          </Text>
+        </View>
         <StatusBadge label={getStockLabel()} variant={getStockVariant()} />
-      </div>
+      </View>
 
-      <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, margin: `${Spacing.xs}px 0` }}>
+      <Text style={styles.reorderText}>
         Reorder Threshold: {stock.reorderLevel} {stock.unit}
-        {stock.batchNumber && ` • Batch: ${stock.batchNumber}`}
-      </div>
+        {stock.batchNumber ? ` • Batch: ${stock.batchNumber}` : ''}
+      </Text>
 
       <StaleDataWarning lastUpdatedAt={stock.lastUpdatedAt} resourceName="inventory" />
 
       {/* Controlled Alternatives Notice when Out of Stock */}
       {isOutOfStock && alternatives.length > 0 && (
-        <div
-          style={{
-            marginTop: Spacing.md,
-            padding: Spacing.sm,
-            backgroundColor: Colors.primarySurface,
-            borderRadius: Spacing.borderRadius.md,
-            border: `1px solid ${Colors.primaryLight}`,
-          }}
-        >
-          <div style={{ fontSize: Typography.fontSizes.xs, fontWeight: Typography.fontWeights.bold, color: Colors.primaryDark, marginBottom: Spacing.xs }}>
+        <View style={styles.alternativesBox}>
+          <Text style={styles.alternativesTitle}>
             🔄 Controlled Alternatives Available ({alternatives.length}):
-          </div>
+          </Text>
           {alternatives.map((alt) => (
-            <div key={alt.id} style={{ fontSize: Typography.fontSizes.xs, color: Colors.textPrimary, padding: '2px 0' }}>
-              • <strong>{alt.name}</strong> ({alt.genericName} {alt.strength})
-              {alt.isAvailableAtFacility !== undefined && (
-                <span style={{ color: alt.isAvailableAtFacility ? Colors.status.available.text : Colors.status.outOfStock.text }}>
-                  {' '}- {alt.isAvailableAtFacility ? `Available (${alt.currentStock || 0} ${alt.unit})` : 'Out of Stock'}
-                </span>
-              )}
-            </div>
+            <View key={alt.id} style={styles.altRow}>
+              <Text style={styles.altText}>
+                • <Text style={styles.altBold}>{alt.name}</Text> ({alt.genericName} {alt.strength})
+                {alt.isAvailableAtFacility !== undefined && (
+                  <Text
+                    style={{
+                      color: alt.isAvailableAtFacility
+                        ? Colors.status.available.text
+                        : Colors.status.outOfStock.text,
+                    }}
+                  >
+                    {' '}- {alt.isAvailableAtFacility ? `Available (${alt.currentStock || 0} ${alt.unit})` : 'Out of Stock'}
+                  </Text>
+                )}
+              </Text>
+            </View>
           ))}
-          <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, marginTop: Spacing.xs, fontStyle: 'italic' }}>
+          <Text style={styles.alternativesNote}>
             Note: Controlled alternatives require clinical approval.
-          </div>
-        </div>
+          </Text>
+        </View>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.xs,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  title: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  reorderText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginVertical: Spacing.xs,
+  },
+  alternativesBox: {
+    marginTop: Spacing.md,
+    padding: Spacing.sm,
+    backgroundColor: Colors.primarySurface,
+    borderRadius: Spacing.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight,
+  },
+  alternativesTitle: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.primaryDark,
+    marginBottom: Spacing.xs,
+  },
+  altRow: {
+    paddingVertical: 2,
+  },
+  altText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textPrimary,
+  },
+  altBold: {
+    fontWeight: Typography.fontWeights.bold,
+  },
+  alternativesNote: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
+    fontStyle: 'italic',
+  },
+});
 
 export default MedicineStockCard;

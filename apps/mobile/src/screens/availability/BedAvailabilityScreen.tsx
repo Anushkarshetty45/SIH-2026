@@ -1,5 +1,13 @@
-// Bed Availability Screen — Real-time Bed Counts with Freshness & Stale Data Warnings
+// Bed Availability Screen — Real-time Bed Counts with Freshness & Stale Data Warnings — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { bedService, EmergencyBedAvailability } from '../../services/bed.service';
 import { BedCategory, FacilityBedSummary } from '../../types';
 import { Colors, Spacing, Typography } from '../../theme';
@@ -14,23 +22,25 @@ import {
 } from '../../components';
 
 export interface BedAvailabilityScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
   onSelectCategory?: (category: BedCategory) => void;
   onNavigateBack?: () => void;
 }
 
-export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  onSelectCategory,
-  onNavigateBack,
-}) => {
+export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const onSelectCategory = props.onSelectCategory;
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<FacilityBedSummary[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string>(new Date().toISOString());
-  const [isStale, setIsStale] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('ALL');
   const [emergencyMode, setEmergencyMode] = useState<boolean>(false);
   const [emergencyBeds, setEmergencyBeds] = useState<EmergencyBedAvailability[]>([]);
@@ -44,13 +54,11 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
         setEmergencyBeds(emergencyData);
         if (emergencyData.length > 0) {
           setLastUpdatedAt(emergencyData[0].lastUpdatedAt);
-          setIsStale(emergencyData[0].isStale);
         }
       } else {
         const data = await bedService.getFacilityBedSummary(facilityId);
         setCategories(data.categories || []);
         setLastUpdatedAt(data.lastUpdatedAt || new Date().toISOString());
-        setIsStale(data.isStale || false);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to load bed availability');
@@ -73,63 +81,27 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
   const totalAvailable = categories.reduce((sum, c) => sum + c.available, 0);
 
   return (
-    <div
-      data-testid="bed-availability-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="bed-availability-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Bed Availability
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            {facilityName}
-          </span>
-        </div>
+          <Text style={styles.screenTitle}>Bed Availability</Text>
+          <Text style={styles.facilitySubtitle}>{facilityName}</Text>
+        </View>
 
-        <div style={{ display: 'flex', gap: Spacing.sm }}>
+        <View style={styles.headerRight}>
           <Button
-            title={emergencyMode ? 'Standard Mode' : '🚨 Emergency View'}
+            title={emergencyMode ? 'Standard' : '🚨 Emergency'}
             variant={emergencyMode ? 'secondary' : 'primary'}
             onPress={() => setEmergencyMode(!emergencyMode)}
             testID="emergency-mode-toggle"
@@ -141,20 +113,11 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
             isLoading={loading}
             testID="refresh-button"
           />
-        </div>
-      </div>
+        </View>
+      </View>
 
       {/* Freshness Banner */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+      <View style={styles.freshnessBanner}>
         <StaleDataWarning
           lastUpdatedAt={lastUpdatedAt}
           resourceName="bed counts"
@@ -162,14 +125,14 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
           testID="freshness-indicator"
         />
         {!loading && !emergencyMode && (
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
+          <Text style={styles.totalStatsText}>
             {totalAvailable} of {totalBeds} beds available
-          </span>
+          </Text>
         )}
-      </div>
+      </View>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {loading && <LoadingState message="Loading live bed availability..." />}
 
         {error && !loading && (
@@ -181,110 +144,89 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
         )}
 
         {!loading && !error && emergencyMode && (
-          <div>
-            <div
-              style={{
-                backgroundColor: Colors.freshness.stale.bg,
-                border: `1px solid ${Colors.freshness.stale.border}`,
-                borderRadius: Spacing.borderRadius.md,
-                padding: Spacing.md,
-                marginBottom: Spacing.md,
-              }}
-            >
-              <h4 style={{ margin: 0, color: Colors.freshness.stale.text, fontSize: Typography.fontSizes.sm }}>
+          <View>
+            <View style={styles.emergencyWarningBox}>
+              <Text style={styles.emergencyWarningTitle}>
                 Emergency Bed Availability (ICU / Oxygen / Ventilator)
-              </h4>
-              <p style={{ margin: `${Spacing.xs}px 0 0`, fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+              </Text>
+              <Text style={styles.emergencyWarningText}>
                 Rule 11: Emergency data older than 2 hours requires verbal re-confirmation prior to transfer.
-              </p>
-            </div>
+              </Text>
+            </View>
 
             {emergencyBeds.map((facility) => (
-              <div
-                key={facility.facilityId}
-                style={{
-                  backgroundColor: Colors.surface,
-                  border: `1px solid ${Colors.border}`,
-                  borderRadius: Spacing.borderRadius.lg,
-                  padding: Spacing.md,
-                  marginBottom: Spacing.md,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
-                    {facility.facilityName}
-                  </h3>
+              <View key={facility.facilityId} style={styles.emergencyCard}>
+                <View style={styles.emergencyCardHeader}>
+                  <Text style={styles.emergencyFacilityName}>{facility.facilityName}</Text>
                   {facility.unreliableForEmergency && (
                     <StatusBadge label="VERIFY FIRST" variant="timedOut" />
                   )}
-                </div>
+                </View>
 
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: Spacing.sm,
-                    marginTop: Spacing.md,
-                  }}
-                >
-                  <div style={{ backgroundColor: Colors.surfaceSubtle, padding: Spacing.sm, borderRadius: Spacing.borderRadius.sm }}>
-                    <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>ICU</span>
-                    <div style={{ fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold, color: Colors.primary }}>
+                <View style={styles.metricsGrid}>
+                  <View style={styles.metricBox}>
+                    <Text style={styles.metricLabel}>ICU</Text>
+                    <Text style={styles.metricValue}>
                       {facility.icuAvailable} / {facility.icuTotal}
-                    </div>
-                  </div>
-                  <div style={{ backgroundColor: Colors.surfaceSubtle, padding: Spacing.sm, borderRadius: Spacing.borderRadius.sm }}>
-                    <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Oxygen</span>
-                    <div style={{ fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold, color: Colors.primary }}>
+                    </Text>
+                  </View>
+                  <View style={styles.metricBox}>
+                    <Text style={styles.metricLabel}>Oxygen</Text>
+                    <Text style={styles.metricValue}>
                       {facility.oxygenAvailable} / {facility.oxygenTotal}
-                    </div>
-                  </div>
-                  <div style={{ backgroundColor: Colors.surfaceSubtle, padding: Spacing.sm, borderRadius: Spacing.borderRadius.sm }}>
-                    <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Ventilator</span>
-                    <div style={{ fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold, color: Colors.primary }}>
+                    </Text>
+                  </View>
+                  <View style={styles.metricBox}>
+                    <Text style={styles.metricLabel}>Ventilator</Text>
+                    <Text style={styles.metricValue}>
                       {facility.ventilatorAvailable} / {facility.ventilatorTotal}
-                    </div>
-                  </div>
-                </div>
+                    </Text>
+                  </View>
+                </View>
 
-                <div style={{ marginTop: Spacing.sm }}>
+                <View style={styles.emergencyStaleContainer}>
                   <StaleDataWarning
                     lastUpdatedAt={facility.lastUpdatedAt}
                     isEmergencyMode={true}
                     resourceName="emergency beds"
                   />
-                </div>
-              </div>
+                </View>
+              </View>
             ))}
-          </div>
+          </View>
         )}
 
         {!loading && !error && !emergencyMode && (
-          <div>
+          <View>
             {/* Filter Pills */}
-            <div style={{ display: 'flex', gap: Spacing.xs, marginBottom: Spacing.md, overflowX: 'auto' }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
               {['ALL', 'AVAILABLE_ONLY', 'GENERAL', 'ICU', 'OXYGEN', 'VENTILATOR', 'MATERNITY', 'PEDIATRIC'].map(
-                (filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setSelectedFilter(filter)}
-                    data-testid={`filter-${filter}`}
-                    style={{
-                      padding: `${Spacing.xs}px ${Spacing.sm}px`,
-                      borderRadius: Spacing.borderRadius.full,
-                      border: `1px solid ${selectedFilter === filter ? Colors.primary : Colors.border}`,
-                      backgroundColor: selectedFilter === filter ? Colors.primary : Colors.surface,
-                      color: selectedFilter === filter ? Colors.textInverse : Colors.textSecondary,
-                      fontSize: Typography.fontSizes.xs,
-                      fontWeight: Typography.fontWeights.medium,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {filter.replace('_', ' ')}
-                  </button>
-                ),
+                (filter) => {
+                  const isSelected = selectedFilter === filter;
+                  return (
+                    <TouchableOpacity
+                      key={filter}
+                      onPress={() => setSelectedFilter(filter)}
+                      testID={`filter-${filter}`}
+                      style={[
+                        styles.filterPill,
+                        isSelected && styles.filterPillSelected,
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          isSelected && styles.filterPillTextSelected,
+                        ]}
+                      >
+                        {filter.replace('_', ' ')}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                },
               )}
-            </div>
+            </ScrollView>
 
             {filteredCategories.length === 0 ? (
               <EmptyState
@@ -295,10 +237,11 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
               />
             ) : (
               filteredCategories.map((item) => (
-                <div
+                <TouchableOpacity
                   key={item.category}
-                  onClick={() => onSelectCategory && onSelectCategory(item.category)}
-                  style={{ cursor: onSelectCategory ? 'pointer' : 'default' }}
+                  onPress={() => onSelectCategory && onSelectCategory(item.category)}
+                  disabled={!onSelectCategory}
+                  activeOpacity={onSelectCategory ? 0.7 : 1}
                 >
                   <BedAvailabilityCard
                     category={item.category}
@@ -308,14 +251,160 @@ export const BedAvailabilityScreen: React.FC<BedAvailabilityScreenProps> = ({
                     facilityName={facilityName}
                     testID={`bed-card-${item.category}`}
                   />
-                </div>
+                </TouchableOpacity>
               ))
             )}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  freshnessBanner: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalStatsText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  emergencyWarningBox: {
+    backgroundColor: Colors.freshness.stale.bg,
+    borderWidth: 1,
+    borderColor: Colors.freshness.stale.border,
+    borderRadius: Spacing.borderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  emergencyWarningTitle: {
+    color: Colors.freshness.stale.text,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  emergencyWarningText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  emergencyCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  emergencyCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  emergencyFacilityName: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: Colors.surfaceSubtle,
+    padding: Spacing.sm,
+    borderRadius: Spacing.borderRadius.sm,
+    alignItems: 'center',
+  },
+  metricLabel: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  metricValue: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  emergencyStaleContainer: {
+    marginTop: Spacing.sm,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    marginBottom: Spacing.md,
+  },
+  filterPill: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginRight: Spacing.xs,
+  },
+  filterPillSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  filterPillText: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+    color: Colors.textSecondary,
+  },
+  filterPillTextSelected: {
+    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.bold,
+  },
+});
 
 export default BedAvailabilityScreen;

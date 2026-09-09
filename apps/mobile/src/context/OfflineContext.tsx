@@ -1,7 +1,8 @@
-// Global Connectivity & Offline State Provider for CareGrid Mobile
+// Global Connectivity & Offline State Provider for CareGrid Mobile — React Native
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { NetworkStatus } from '../types';
-import { syncService, PushMutationDto } from '../services/sync.service';
+import { syncService, PushMutationDto, initSyncStorage } from '../services/sync.service';
 import { formatElapsedTime } from '../components/StaleDataWarning';
 
 export interface OfflineContextType {
@@ -27,9 +28,7 @@ export interface OfflineContextType {
 const OfflineContext = createContext<OfflineContextType | undefined>(undefined);
 
 export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(() => {
-    return typeof navigator !== 'undefined' ? navigator.onLine : true;
-  });
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => {
@@ -38,6 +37,14 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [pendingMutations, setPendingMutations] = useState<PushMutationDto[]>(() => {
     return syncService.getOfflineQueue();
   });
+
+  // Hydrate from AsyncStorage on startup
+  useEffect(() => {
+    initSyncStorage().then(() => {
+      setLastSyncedAt(syncService.getLastSyncedAt());
+      setPendingMutations(syncService.getOfflineQueue());
+    });
+  }, []);
 
   // Calculate high-level NetworkStatus
   const networkStatus: NetworkStatus = isSyncing
@@ -106,27 +113,22 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refreshQueue();
   }, [refreshQueue]);
 
-  // Window event listeners for online/offline events
+  // NetInfo network state listeners for React Native
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleOnline = () => {
-      setIsOnline(true);
-      setSyncError(null);
-      // Automatically trigger sync upon reconnection
-      triggerSync().catch(() => {});
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+      const online = Boolean(state.isConnected && state.isInternetReachable !== false);
+      setIsOnline((prevOnline) => {
+        // If transitioning from offline to online, trigger background sync
+        if (!prevOnline && online) {
+          setSyncError(null);
+          triggerSync().catch(() => {});
+        }
+        return online;
+      });
+    });
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
     };
   }, [triggerSync]);
 

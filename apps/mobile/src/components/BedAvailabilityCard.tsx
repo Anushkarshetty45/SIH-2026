@@ -1,7 +1,8 @@
-// Bed Category Availability Card Component
+// Bed Category Availability Card Component — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
-import { BedCategory, FreshnessStatus } from '../types';
+import { BedCategory } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { StaleDataWarning } from './StaleDataWarning';
 
@@ -13,7 +14,7 @@ export interface BedAvailabilityCardProps {
   facilityName?: string;
   isEmergencyContext?: boolean;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const BedAvailabilityCard: React.FC<BedAvailabilityCardProps> = ({
@@ -29,47 +30,78 @@ export const BedAvailabilityCard: React.FC<BedAvailabilityCardProps> = ({
   const isAvailable = availableCount > 0;
 
   return (
-    <div
-      data-testid={testID}
-      style={{
-        backgroundColor: Colors.surface,
-        border: `1px solid ${Colors.border}`,
-        borderRadius: Spacing.borderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.sm,
-        ...style,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xs }}>
-        <div>
-          <h4 style={{ margin: 0, fontSize: Typography.fontSizes.sm, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+    <View testID={testID} style={[styles.container, style]}>
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>
             {category} Ward
-          </h4>
+          </Text>
           {facilityName && (
-            <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+            <Text style={styles.facilityName}>
               {facilityName}
-            </span>
+            </Text>
           )}
-        </div>
+        </View>
         <StatusBadge
           label={isAvailable ? `${availableCount} Available` : 'Full / 0 Available'}
           variant={isAvailable ? 'available' : 'outOfStock'}
         />
-      </div>
+      </View>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.xs, marginBottom: Spacing.xs }}>
-        <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
+      <View style={styles.capacityRow}>
+        <Text style={styles.capacityText}>
           Capacity: {totalCount - availableCount} Occupied / {totalCount} Total
-        </span>
-      </div>
+        </Text>
+      </View>
 
       <StaleDataWarning
         lastUpdatedAt={lastUpdatedAt}
         resourceName={`${category} beds`}
         isEmergencyMode={isEmergencyContext}
       />
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  title: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilityName: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  capacityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: Spacing.xs,
+  },
+  capacityText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+});
 
 export default BedAvailabilityCard;

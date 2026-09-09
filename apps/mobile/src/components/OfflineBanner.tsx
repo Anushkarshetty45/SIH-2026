@@ -1,5 +1,13 @@
-// Connectivity & Offline Banner
+// Connectivity & Offline Banner — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { NetworkStatus } from '../types';
 
@@ -8,7 +16,7 @@ export interface OfflineBannerProps {
   lastSyncedText?: string;
   onRetrySync?: () => void;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const OfflineBanner: React.FC<OfflineBannerProps> = ({
@@ -59,44 +67,82 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
   const config = getConfig();
   if (!config) return null;
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.md,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.sm,
-    backgroundColor: config.bg,
-    color: config.color,
-    borderBottom: `1px solid ${config.border}`,
-    fontSize: Typography.fontSizes.sm,
-    fontWeight: Typography.fontWeights.medium,
-    boxSizing: 'border-box',
-    width: '100%',
-    cursor: status === 'SYNC_FAILED' && onRetrySync ? 'pointer' : 'default',
-    ...style,
-  };
+  const isClickable = status === 'SYNC_FAILED' && !!onRetrySync;
+  const ContainerComponent = isClickable ? TouchableOpacity : View;
 
   return (
-    <div
-      style={containerStyle}
-      data-testid={testID}
-      role="status"
-      onClick={status === 'SYNC_FAILED' ? onRetrySync : undefined}
+    <ContainerComponent
+      style={[
+        styles.container,
+        {
+          backgroundColor: config.bg,
+          borderBottomColor: config.border,
+        },
+        style,
+      ]}
+      testID={testID}
+      accessibilityRole={isClickable ? 'button' : 'summary'}
+      accessibilityLabel={`${config.label}. ${config.details || ''}`}
+      onPress={isClickable ? onRetrySync : undefined}
+      activeOpacity={isClickable ? 0.7 : 1}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-        <span aria-hidden="true">{config.icon}</span>
-        <span style={{ fontWeight: Typography.fontWeights.bold }}>{config.label}</span>
-        {config.details && <span style={{ opacity: 0.9 }}>• {config.details}</span>}
-      </div>
-      {status === 'SYNC_FAILED' && onRetrySync && (
-        <span style={{ fontSize: Typography.fontSizes.xs, textDecoration: 'underline' }}>
+      <View style={styles.leftRow}>
+        <Text style={styles.icon} accessibilityElementsHidden={true} importantForAccessibility="no">
+          {config.icon}
+        </Text>
+        <Text style={[styles.label, { color: config.color }]}>
+          {config.label}
+        </Text>
+        {config.details && (
+          <Text style={[styles.details, { color: config.color }]}>
+            • {config.details}
+          </Text>
+        )}
+      </View>
+      {isClickable && (
+        <Text style={[styles.retryText, { color: config.color }]}>
           Retry
-        </span>
+        </Text>
       )}
-    </div>
+    </ContainerComponent>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    width: '100%',
+  },
+  leftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flexShrink: 1,
+  },
+  icon: {
+    fontSize: Typography.fontSizes.sm,
+  },
+  label: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  details: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+    opacity: 0.9,
+    flexShrink: 1,
+  },
+  retryText: {
+    fontSize: Typography.fontSizes.xs,
+    textDecorationLine: 'underline',
+    fontWeight: Typography.fontWeights.bold,
+    marginLeft: Spacing.sm,
+  },
+});
 
 export default OfflineBanner;

@@ -1,5 +1,14 @@
-// Accessible, High-Contrast Button Primitive
+// Accessible, High-Contrast Button Primitive — React Native
 import React from 'react';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 
 export interface ButtonProps {
@@ -10,7 +19,7 @@ export interface ButtonProps {
   disabled?: boolean;
   testID?: string;
   accessibilityLabel?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -23,71 +32,82 @@ export const Button: React.FC<ButtonProps> = ({
   accessibilityLabel,
   style,
 }) => {
-  const getBackgroundColor = () => {
-    if (disabled || isLoading) return Colors.border;
+  const isDisabled = disabled || isLoading;
+
+  const getBackgroundColor = (): string => {
+    if (isDisabled) return Colors.border;
     switch (variant) {
-      case 'primary':
-        return Colors.primary;
-      case 'secondary':
-        return Colors.secondary;
-      case 'danger':
-        return Colors.emergency.surface;
-      case 'outline':
-        return 'transparent';
-      default:
-        return Colors.primary;
+      case 'primary': return Colors.primary;
+      case 'secondary': return Colors.secondary;
+      case 'danger': return Colors.emergency.surface;
+      case 'outline': return 'transparent';
+      default: return Colors.primary;
     }
   };
 
-  const getTextColor = () => {
-    if (disabled || isLoading) return Colors.textMuted;
+  const getTextColor = (): string => {
+    if (isDisabled) return Colors.textMuted;
     if (variant === 'outline') return Colors.primary;
     return Colors.textInverse;
   };
 
-  const getBorder = () => {
-    if (variant === 'outline') {
-      return `2px solid ${disabled || isLoading ? Colors.border : Colors.primary}`;
-    }
-    return 'none';
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: Spacing.minTouchTarget, // 48px minimum touch target for accessibility
-    paddingLeft: Spacing.xl,
-    paddingRight: Spacing.xl,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    backgroundColor: getBackgroundColor(),
-    color: getTextColor(),
-    border: getBorder(),
-    borderRadius: Spacing.borderRadius.md,
-    fontSize: Typography.fontSizes.md,
-    fontWeight: Typography.fontWeights.semibold,
-    cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
-    opacity: disabled || isLoading ? 0.7 : 1,
-    boxSizing: 'border-box',
-    width: '100%',
-    textAlign: 'center',
-    userSelect: 'none',
-    ...style,
-  };
+  const getBorderWidth = (): number => variant === 'outline' ? 2 : 0;
+  const getBorderColor = (): string =>
+    variant === 'outline' ? (isDisabled ? Colors.border : Colors.primary) : 'transparent';
 
   return (
-    <button
-      type="button"
-      data-testid={testID}
-      aria-label={accessibilityLabel || title}
-      disabled={disabled || isLoading}
-      onClick={onPress}
-      style={buttonStyle}
+    <TouchableOpacity
+      testID={testID}
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityRole="button"
+      disabled={isDisabled}
+      onPress={onPress}
+      activeOpacity={0.75}
+      style={[
+        styles.button,
+        {
+          backgroundColor: getBackgroundColor(),
+          borderWidth: getBorderWidth(),
+          borderColor: getBorderColor(),
+          opacity: isDisabled ? 0.7 : 1,
+        },
+        style,
+      ]}
     >
-      {isLoading ? '...' : title}
-    </button>
+      {isLoading ? (
+        <ActivityIndicator
+          size="small"
+          color={getTextColor()}
+          accessibilityLabel="Loading"
+        />
+      ) : (
+        <Text
+          style={[styles.text, { color: getTextColor() }]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+      )}
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: Spacing.minTouchTarget, // 48px minimum touch target
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: Spacing.borderRadius.md,
+    width: '100%',
+  },
+  text: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.semibold,
+    textAlign: 'center',
+  },
+});
 
 export default Button;

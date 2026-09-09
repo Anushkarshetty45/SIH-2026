@@ -1,5 +1,13 @@
-// Offline Queue Screen — View and Manage Pending Offline Writes & Sync Retries
+// Offline Queue Screen — View and Manage Pending Offline Writes & Sync Retries — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useOffline } from '../../context/OfflineContext';
 import { Colors, Spacing, Typography } from '../../theme';
 import {
@@ -15,7 +23,10 @@ export interface OfflineQueueScreenProps {
   onNavigateBack?: () => void;
 }
 
-export const OfflineQueueScreen: React.FC<OfflineQueueScreenProps> = ({ onNavigateBack }) => {
+export const OfflineQueueScreen: React.FC<OfflineQueueScreenProps> = (props) => {
+  const navigation = useNavigation<any>();
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const {
     networkStatus,
     isOnline,
@@ -35,15 +46,7 @@ export const OfflineQueueScreen: React.FC<OfflineQueueScreenProps> = ({ onNaviga
   };
 
   return (
-    <div
-      data-testid="offline-queue-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="offline-queue-screen" style={styles.container}>
       {/* Offline Alert Banner */}
       <OfflineBanner
         status={networkStatus}
@@ -53,51 +56,25 @@ export const OfflineQueueScreen: React.FC<OfflineQueueScreenProps> = ({ onNaviga
       />
 
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Offline Write Queue
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          <Text style={styles.screenTitle}>Offline Write Queue</Text>
+          <Text style={styles.screenSubtitle}>
             Local mutations waiting to sync with central servers
-          </span>
-        </div>
+          </Text>
+        </View>
 
-        <div style={{ display: 'flex', gap: Spacing.sm, alignItems: 'center' }}>
+        <View style={styles.headerRight}>
           <SyncStatus
             status={networkStatus}
             pendingCount={pendingCount}
@@ -111,138 +88,223 @@ export const OfflineQueueScreen: React.FC<OfflineQueueScreenProps> = ({ onNaviga
             disabled={!isOnline || isSyncing}
             testID="manual-sync-btn"
           />
-        </div>
-      </div>
+        </View>
+      </View>
 
       {/* Status Bar */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            Last Synced: <strong>{lastSyncedText}</strong>
-          </span>
+      <View style={styles.statusBar}>
+        <View style={styles.statusLeft}>
+          <Text style={styles.lastSyncedLabel}>
+            Last Synced: <Text style={styles.bold}>{lastSyncedText}</Text>
+          </Text>
           {lastSyncedAt && (
             <StaleDataWarning lastUpdatedAt={lastSyncedAt} resourceName="server database" />
           )}
-        </div>
+        </View>
 
         {pendingCount > 0 && (
-          <button
-            onClick={clearPendingQueue}
-            data-testid="clear-queue-btn"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: Colors.status.outOfStock.text,
-              fontSize: Typography.fontSizes.xs,
-              cursor: 'pointer',
-              fontWeight: Typography.fontWeights.medium,
-            }}
+          <TouchableOpacity
+            onPress={clearPendingQueue}
+            testID="clear-queue-btn"
+            accessibilityRole="button"
           >
-            Discard All ({pendingCount})
-          </button>
+            <Text style={styles.discardText}>
+              Discard All ({pendingCount})
+            </Text>
+          </TouchableOpacity>
         )}
-      </div>
+      </View>
 
       {/* Sync Error Banner */}
       {syncError && (
-        <div
-          data-testid="sync-error-banner"
-          style={{
-            padding: `${Spacing.sm}px ${Spacing.lg}px`,
-            backgroundColor: Colors.status.outOfStock.bg,
-            borderBottom: `1px solid ${Colors.status.outOfStock.border}`,
-            color: Colors.status.outOfStock.text,
-            fontSize: Typography.fontSizes.xs,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <span>⚠️ {syncError}</span>
-          <button
-            onClick={handleSyncNow}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: Colors.status.outOfStock.text,
-              fontWeight: Typography.fontWeights.bold,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontSize: Typography.fontSizes.xs,
-            }}
-          >
-            Retry Now
-          </button>
-        </div>
+        <View testID="sync-error-banner" style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>⚠️ {syncError}</Text>
+          <TouchableOpacity onPress={handleSyncNow} accessibilityRole="button">
+            <Text style={styles.retryText}>Retry Now</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {pendingCount === 0 ? (
           <EmptyState
             title="All Changes Synced"
             description="Your device is in sync with the central CareGrid server. No pending offline actions."
           />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+          <View style={styles.list}>
             {pendingMutations.map((mut, idx) => (
-              <div
+              <View
                 key={mut.id}
-                data-testid={`queue-item-${mut.id}`}
-                style={{
-                  backgroundColor: Colors.surface,
-                  border: `1px solid ${Colors.border}`,
-                  borderRadius: Spacing.borderRadius.lg,
-                  padding: Spacing.md,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                testID={`queue-item-${mut.id}`}
+                style={styles.mutationCard}
               >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-                    <span style={{ fontWeight: Typography.fontWeights.bold, fontSize: Typography.fontSizes.sm, color: Colors.textPrimary }}>
+                <View style={styles.mutationInfo}>
+                  <View style={styles.mutationHeader}>
+                    <Text style={styles.mutationAction}>
                       #{idx + 1} • {mut.action} {mut.entity}
-                    </span>
+                    </Text>
                     <StatusBadge
                       label={isSyncing ? 'SYNCING' : 'PENDING'}
                       variant={isSyncing ? 'pending' : 'lowStock'}
                     />
-                  </div>
+                  </View>
 
-                  <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary, marginTop: 4 }}>
+                  <Text style={styles.mutationMeta}>
                     Logged at: {new Date(mut.clientTimestamp).toLocaleTimeString()} • ID: {mut.id.slice(0, 16)}...
-                  </div>
+                  </Text>
 
-                  <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, marginTop: 2, fontFamily: 'monospace' }}>
+                  <Text style={styles.mutationPayload}>
                     {JSON.stringify(mut.payload).slice(0, 80)}...
-                  </div>
-                </div>
+                  </Text>
+                </View>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-                  <Button
-                    title="Remove"
-                    variant="outline"
-                    onPress={() => removeMutation(mut.id)}
-                    testID={`remove-mut-${mut.id}`}
-                  />
-                </div>
-              </div>
+                <Button
+                  title="Remove"
+                  variant="outline"
+                  onPress={() => removeMutation(mut.id)}
+                  testID={`remove-mut-${mut.id}`}
+                />
+              </View>
             ))}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  screenSubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'center',
+  },
+  statusBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  lastSyncedLabel: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  bold: {
+    fontWeight: Typography.fontWeights.bold,
+  },
+  discardText: {
+    color: Colors.status.outOfStock.text,
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  errorBanner: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.status.outOfStock.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.status.outOfStock.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorBannerText: {
+    color: Colors.status.outOfStock.text,
+    fontSize: Typography.fontSizes.xs,
+  },
+  retryText: {
+    color: Colors.status.outOfStock.text,
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.xs,
+    textDecorationLine: 'underline',
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  list: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  mutationCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mutationInfo: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  mutationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  mutationAction: {
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textPrimary,
+  },
+  mutationMeta: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  mutationPayload: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+    fontFamily: 'monospace',
+  },
+});
 
 export default OfflineQueueScreen;

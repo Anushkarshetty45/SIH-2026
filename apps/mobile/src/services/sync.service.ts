@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api/client';
 
 export interface PushMutationDto {
@@ -40,33 +41,42 @@ export interface PushSyncResponse {
 const OFFLINE_QUEUE_KEY = 'caregrid_offline_mutation_queue';
 const LAST_SYNC_KEY = 'caregrid_last_synced_timestamp';
 
-// In-memory fallback for environments without browser localStorage (e.g. Node tests / React Native)
+// In-memory cache for instant synchronous access in React renders
 const inMemoryStore = new Map<string, string>();
+
+// Initialize memory store from AsyncStorage asynchronously on startup
+export const initSyncStorage = async (): Promise<void> => {
+  try {
+    const keys = [OFFLINE_QUEUE_KEY, LAST_SYNC_KEY];
+    const pairs = await AsyncStorage.multiGet(keys);
+    pairs.forEach(([key, val]) => {
+      if (val !== null) {
+        inMemoryStore.set(key, val);
+      }
+    });
+  } catch (err) {
+    console.warn('[SyncService] Failed to hydrate from AsyncStorage:', err);
+  }
+};
+
+// Immediate background attempt to hydrate in case initSyncStorage is not awaited
+initSyncStorage().catch(() => {});
 
 const storage = {
   getItem: (key: string): string | null => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-    } catch {}
     return inMemoryStore.get(key) || null;
   },
   setItem: (key: string, value: string): void => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-      }
-    } catch {}
     inMemoryStore.set(key, value);
+    AsyncStorage.setItem(key, value).catch((err) => {
+      console.warn('[SyncService] AsyncStorage setItem error:', err);
+    });
   },
   removeItem: (key: string): void => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
-      }
-    } catch {}
     inMemoryStore.delete(key);
+    AsyncStorage.removeItem(key).catch((err) => {
+      console.warn('[SyncService] AsyncStorage removeItem error:', err);
+    });
   },
 };
 

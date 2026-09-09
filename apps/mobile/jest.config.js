@@ -10,11 +10,17 @@ module.exports = {
     '^@rhcp/shared-types$': '<rootDir>/../../packages/shared-types/src/index.ts',
     '^@rhcp/config$': '<rootDir>/../../packages/config/src/index.ts',
   },
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
-        tsconfig: '<rootDir>/tsconfig.json',
+        tsconfig: {
+          jsx: 'react-jsx',
+          esModuleInterop: true,
+          module: 'CommonJS',
+          target: 'ES2021',
+        },
       },
     ],
   },

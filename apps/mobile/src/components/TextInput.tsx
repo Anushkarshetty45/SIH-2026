@@ -1,5 +1,14 @@
-// Labeled, Accessible TextInput Primitive
+// Labeled, Accessible TextInput Primitive — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TextInput as RNTextInput,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  KeyboardTypeOptions,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 
 export interface TextInputProps {
@@ -11,11 +20,26 @@ export interface TextInputProps {
   helperText?: string;
   secureTextEntry?: boolean;
   disabled?: boolean;
-  keyboardType?: 'text' | 'numeric' | 'email' | 'tel';
+  keyboardType?: 'text' | 'numeric' | 'email' | 'tel' | KeyboardTypeOptions;
   testID?: string;
   required?: boolean;
-  style?: React.CSSProperties;
+  multiline?: boolean;
+  numberOfLines?: number;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  style?: StyleProp<ViewStyle>;
 }
+
+const mapKeyboardType = (type?: string): KeyboardTypeOptions => {
+  switch (type) {
+    case 'numeric': return 'numeric';
+    case 'email':
+    case 'email-address': return 'email-address';
+    case 'tel': return 'phone-pad';
+    case 'phone-pad': return 'phone-pad';
+    case 'decimal-pad': return 'decimal-pad';
+    default: return 'default';
+  }
+};
 
 export const TextInput: React.FC<TextInputProps> = ({
   label,
@@ -29,73 +53,89 @@ export const TextInput: React.FC<TextInputProps> = ({
   keyboardType = 'text',
   testID,
   required = false,
+  multiline = false,
+  numberOfLines = 1,
+  autoCapitalize = 'none',
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
+  return (
+    <View style={[styles.container, style]}>
+      {label && (
+        <Text style={styles.label}>
+          {label}
+          {required && <Text style={styles.required}> *</Text>}
+        </Text>
+      )}
+      <RNTextInput
+        testID={testID}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={Colors.textMuted}
+        secureTextEntry={secureTextEntry}
+        editable={!disabled}
+        keyboardType={mapKeyboardType(keyboardType)}
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        style={[
+          styles.input,
+          multiline && styles.multilineInput,
+          {
+            backgroundColor: disabled ? Colors.surfaceSubtle : Colors.surface,
+            borderColor: error ? Colors.emergency.border : Colors.border,
+          },
+        ]}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+      />
+      {error && <Text style={styles.errorText}>{error}</Text>}
+      {!error && helperText && <Text style={styles.helperText}>{helperText}</Text>}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
     flexDirection: 'column',
     marginBottom: Spacing.md,
     width: '100%',
-    ...style,
-  };
-
-  const labelStyle: React.CSSProperties = {
+  },
+  label: {
     fontSize: Typography.fontSizes.sm,
     fontWeight: Typography.fontWeights.medium,
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
-  };
-
-  const inputStyle: React.CSSProperties = {
+  },
+  required: {
+    color: Colors.emergency.surface,
+  },
+  input: {
     minHeight: Spacing.minTouchTarget, // 48px touch target
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.md,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     fontSize: Typography.fontSizes.md,
     color: Colors.textPrimary,
-    backgroundColor: disabled ? Colors.surfaceSubtle : Colors.surface,
-    border: `1.5px solid ${error ? Colors.emergency.border : Colors.border}`,
+    borderWidth: 1.5,
     borderRadius: Spacing.borderRadius.md,
-    outline: 'none',
-    boxSizing: 'border-box',
     width: '100%',
-  };
-
-  const errorStyle: React.CSSProperties = {
+  },
+  multilineInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  errorText: {
     fontSize: Typography.fontSizes.xs,
     color: Colors.emergency.surface,
     marginTop: Spacing.xs,
     fontWeight: Typography.fontWeights.medium,
-  };
-
-  const helperStyle: React.CSSProperties = {
+  },
+  helperText: {
     fontSize: Typography.fontSizes.xs,
     color: Colors.textSecondary,
     marginTop: Spacing.xs,
-  };
-
-  return (
-    <div style={containerStyle}>
-      {label && (
-        <label style={labelStyle}>
-          {label} {required && <span style={{ color: Colors.emergency.surface }}>*</span>}
-        </label>
-      )}
-      <input
-        type={secureTextEntry ? 'password' : keyboardType === 'numeric' ? 'number' : keyboardType}
-        value={value}
-        onChange={(e) => onChangeText(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        data-testid={testID}
-        aria-invalid={!!error}
-        style={inputStyle}
-      />
-      {error && <span style={errorStyle}>{error}</span>}
-      {!error && helperText && <span style={helperStyle}>{helperText}</span>}
-    </div>
-  );
-};
+  },
+});
 
 export default TextInput;

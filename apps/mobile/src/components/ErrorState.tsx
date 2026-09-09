@@ -1,5 +1,6 @@
-// Understandable Localized Error Display
+// Understandable Localized Error Display — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Button } from './Button';
 
@@ -10,7 +11,7 @@ export interface ErrorStateProps {
   retryLabel?: string;
   isNetworkError?: boolean;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
@@ -22,55 +23,60 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   testID,
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
+  return (
+    <View
+      testID={testID}
+      accessibilityRole="alert"
+      style={[styles.container, style]}
+    >
+      <Text style={styles.icon} accessibilityElementsHidden>
+        {isNetworkError ? '📡' : '⚠️'}
+      </Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.message}>{message}</Text>
+      {onRetry && (
+        <View style={styles.retryWrapper}>
+          <Button title={retryLabel} onPress={onRetry} variant="primary" />
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.xl,
-    backgroundColor: Colors.emergency.background + '15', // light reddish tint
-    border: `1px solid ${Colors.status.rejected.border}`,
+    backgroundColor: Colors.status.rejected.bg,
+    borderWidth: 1,
+    borderColor: Colors.status.rejected.border,
     borderRadius: Spacing.borderRadius.lg,
     margin: Spacing.md,
-    textAlign: 'center',
-    boxSizing: 'border-box',
-    ...style,
-  };
-
-  const iconStyle: React.CSSProperties = {
+  },
+  icon: {
     fontSize: 32,
     marginBottom: Spacing.xs,
-    color: Colors.emergency.surface,
-  };
-
-  const titleStyle: React.CSSProperties = {
+  },
+  title: {
     fontSize: Typography.fontSizes.md,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.status.rejected.text,
     marginBottom: Spacing.xs,
-  };
-
-  const messageStyle: React.CSSProperties = {
+    textAlign: 'center',
+  },
+  message: {
     fontSize: Typography.fontSizes.sm,
     color: Colors.textSecondary,
-    marginBottom: onRetry ? Spacing.lg : 0,
+    textAlign: 'center',
     maxWidth: 320,
-  };
-
-  return (
-    <div style={containerStyle} data-testid={testID} role="alert">
-      <span style={iconStyle} aria-hidden="true">
-        {isNetworkError ? '📡' : '⚠️'}
-      </span>
-      <h4 style={titleStyle}>{title}</h4>
-      <p style={messageStyle}>{message}</p>
-      {onRetry && (
-        <div style={{ width: '100%', maxWidth: 180 }}>
-          <Button title={retryLabel} onPress={onRetry} variant="primary" />
-        </div>
-      )}
-    </div>
-  );
-};
+  },
+  retryWrapper: {
+    width: '100%',
+    maxWidth: 180,
+    marginTop: Spacing.lg,
+  },
+});
 
 export default ErrorState;

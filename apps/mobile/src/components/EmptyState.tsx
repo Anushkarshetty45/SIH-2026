@@ -1,5 +1,6 @@
-// Meaningful Empty State Primitive
+// Meaningful Empty State Primitive — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Button } from './Button';
 
@@ -10,7 +11,7 @@ export interface EmptyStateProps {
   onAction?: () => void;
   icon?: string;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -22,54 +23,55 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   testID,
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
+  return (
+    <View testID={testID} style={[styles.container, style]}>
+      <Text style={styles.icon} accessibilityElementsHidden>{icon}</Text>
+      <Text style={styles.title}>{title}</Text>
+      {description && <Text style={styles.description}>{description}</Text>}
+      {actionLabel && onAction && (
+        <View style={styles.actionWrapper}>
+          <Button title={actionLabel} onPress={onAction} variant="outline" />
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.xxl,
-    textAlign: 'center',
     backgroundColor: Colors.surface,
     borderRadius: Spacing.borderRadius.lg,
-    border: `1px dashed ${Colors.border}`,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
     margin: Spacing.md,
-    boxSizing: 'border-box',
-    ...style,
-  };
-
-  const iconStyle: React.CSSProperties = {
+  },
+  icon: {
     fontSize: 40,
     marginBottom: Spacing.sm,
-  };
-
-  const titleStyle: React.CSSProperties = {
+  },
+  title: {
     fontSize: Typography.fontSizes.md,
     fontWeight: Typography.fontWeights.semibold,
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
-  };
-
-  const descStyle: React.CSSProperties = {
+    textAlign: 'center',
+  },
+  description: {
     fontSize: Typography.fontSizes.sm,
     color: Colors.textSecondary,
-    marginBottom: actionLabel && onAction ? Spacing.lg : 0,
+    textAlign: 'center',
     maxWidth: 320,
-  };
-
-  return (
-    <div style={containerStyle} data-testid={testID}>
-      <span style={iconStyle} aria-hidden="true">
-        {icon}
-      </span>
-      <h4 style={titleStyle}>{title}</h4>
-      {description && <p style={descStyle}>{description}</p>}
-      {actionLabel && onAction && (
-        <div style={{ width: '100%', maxWidth: 200 }}>
-          <Button title={actionLabel} onPress={onAction} variant="outline" />
-        </div>
-      )}
-    </div>
-  );
-};
+  },
+  actionWrapper: {
+    width: '100%',
+    maxWidth: 200,
+    marginTop: Spacing.lg,
+  },
+});
 
 export default EmptyState;

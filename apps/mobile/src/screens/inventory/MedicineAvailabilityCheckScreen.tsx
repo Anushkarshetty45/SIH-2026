@@ -1,5 +1,13 @@
-// Medicine Availability Check Screen (Prescription-time multi-item check)
+// Medicine Availability Check Screen (Prescription-time multi-item check) — React Native
 import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { inventoryService, PrescriptionCheckResult } from '../../services/inventory.service';
 import { Colors, Spacing, Typography } from '../../theme';
 import {
@@ -8,36 +16,47 @@ import {
   LoadingState,
   StaleDataWarning,
   StatusBadge,
+  TextInput,
 } from '../../components';
 
 export interface MedicineAvailabilityCheckScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
   onNavigateBack?: () => void;
 }
 
-export const MedicineAvailabilityCheckScreen: React.FC<MedicineAvailabilityCheckScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  onNavigateBack,
-}) => {
+export const MedicineAvailabilityCheckScreen: React.FC<MedicineAvailabilityCheckScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [items, setItems] = useState<Array<{ medicineId: string; medicineName: string; quantity: number }>>([
     { medicineId: 'med-paracetamol-500', medicineName: 'Paracetamol 500mg', quantity: 20 },
     { medicineId: 'med-amoxicillin-500', medicineName: 'Amoxicillin 500mg', quantity: 15 },
   ]);
   const [newMedName, setNewMedName] = useState('');
   const [newMedId, setNewMedId] = useState('');
-  const [newQty, setNewQty] = useState(10);
+  const [newQty, setNewQty] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PrescriptionCheckResult | null>(null);
 
   const handleAddItem = () => {
     if (!newMedName.trim() || !newMedId.trim()) return;
-    setItems((prev) => [...prev, { medicineId: newMedId.trim(), medicineName: newMedName.trim(), quantity: newQty }]);
+    setItems((prev) => [
+      ...prev,
+      {
+        medicineId: newMedId.trim(),
+        medicineName: newMedName.trim(),
+        quantity: parseInt(newQty, 10) || 10,
+      },
+    ]);
     setNewMedName('');
     setNewMedId('');
-    setNewQty(10);
+    setNewQty('10');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -62,233 +81,305 @@ export const MedicineAvailabilityCheckScreen: React.FC<MedicineAvailabilityCheck
   };
 
   return (
-    <div
-      data-testid="medicine-availability-check-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="medicine-availability-check-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Prescription Availability Check
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            {facilityName} • Multi-item fulfillment & controlled alternatives
-          </span>
-        </div>
-      </div>
+          <Text style={styles.screenTitle}>Prescription Check</Text>
+          <Text style={styles.facilitySubtitle}>
+            {facilityName} • Multi-item fulfillment & alternatives
+          </Text>
+        </View>
+      </View>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {/* Prescription Item List */}
-        <div
-          style={{
-            backgroundColor: Colors.surface,
-            border: `1px solid ${Colors.border}`,
-            borderRadius: Spacing.borderRadius.lg,
-            padding: Spacing.md,
-            marginBottom: Spacing.md,
-          }}
-        >
-          <h3 style={{ margin: `0 0 ${Spacing.sm}px`, fontSize: Typography.fontSizes.sm, color: Colors.textPrimary }}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
             Prescription Items ({items.length})
-          </h3>
+          </Text>
 
           {items.map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: `${Spacing.xs}px 0`,
-                borderBottom: `1px solid ${Colors.border}`,
-              }}
-            >
-              <div>
-                <span style={{ fontWeight: Typography.fontWeights.medium, fontSize: Typography.fontSizes.sm }}>
-                  {item.medicineName}
-                </span>
-                <span style={{ color: Colors.textMuted, fontSize: Typography.fontSizes.xs, marginLeft: Spacing.sm }}>
-                  Qty: {item.quantity}
-                </span>
-              </div>
-              <button
-                onClick={() => handleRemoveItem(idx)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: Colors.status.outOfStock.text,
-                  cursor: 'pointer',
-                  fontSize: Typography.fontSizes.xs,
-                }}
+            <View key={idx} style={styles.itemRow}>
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName}>{item.medicineName}</Text>
+                <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleRemoveItem(idx)}
+                accessibilityRole="button"
               >
-                Remove
-              </button>
-            </div>
+                <Text style={styles.removeText}>Remove</Text>
+              </TouchableOpacity>
+            </View>
           ))}
 
           {/* Add Item Row */}
-          <div style={{ display: 'flex', gap: Spacing.xs, marginTop: Spacing.md, alignItems: 'center' }}>
-            <input
-              type="text"
-              placeholder="Medicine Name"
+          <View style={styles.addRow}>
+            <TextInput
+              label="Medicine Name"
+              placeholder="e.g. Cetirizine 10mg"
               value={newMedName}
-              onChange={(e) => setNewMedName(e.target.value)}
-              style={{
-                flex: 2,
-                padding: Spacing.xs,
-                borderRadius: Spacing.borderRadius.sm,
-                border: `1px solid ${Colors.border}`,
-                fontSize: Typography.fontSizes.xs,
-              }}
+              onChangeText={setNewMedName}
             />
-            <input
-              type="text"
-              placeholder="Medicine ID"
-              value={newMedId}
-              onChange={(e) => setNewMedId(e.target.value)}
-              style={{
-                flex: 1,
-                padding: Spacing.xs,
-                borderRadius: Spacing.borderRadius.sm,
-                border: `1px solid ${Colors.border}`,
-                fontSize: Typography.fontSizes.xs,
-              }}
-            />
-            <input
-              type="number"
-              value={newQty}
-              onChange={(e) => setNewQty(Number(e.target.value))}
-              style={{
-                width: 60,
-                padding: Spacing.xs,
-                borderRadius: Spacing.borderRadius.sm,
-                border: `1px solid ${Colors.border}`,
-                fontSize: Typography.fontSizes.xs,
-              }}
-            />
-            <Button title="Add" variant="outline" onPress={handleAddItem} />
-          </div>
+            <View style={styles.addFieldsRow}>
+              <View style={styles.addCol}>
+                <TextInput
+                  label="Medicine ID"
+                  placeholder="e.g. med-cetirizine-10"
+                  value={newMedId}
+                  onChangeText={setNewMedId}
+                />
+              </View>
+              <View style={styles.addColSmall}>
+                <TextInput
+                  label="Qty"
+                  value={newQty}
+                  onChangeText={setNewQty}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            <Button title="+ Add Item" variant="outline" onPress={handleAddItem} />
+          </View>
 
-          <div style={{ marginTop: Spacing.md }}>
+          <View style={styles.verifyButtonWrapper}>
             <Button
               title="Verify All Items at Facility"
               onPress={handleCheck}
               isLoading={loading}
               testID="verify-prescription-btn"
             />
-          </div>
-        </div>
+          </View>
+        </View>
 
         {error && <ErrorState title="Verification Failed" message={error} onRetry={handleCheck} />}
         {loading && <LoadingState message="Checking inventory records..." />}
 
         {/* Results */}
         {!loading && result && (
-          <div
-            data-testid="prescription-check-result"
-            style={{
-              backgroundColor: Colors.surface,
-              border: `1.5px solid ${result.allAvailable ? Colors.status.available.border : Colors.status.lowStock.border}`,
-              borderRadius: Spacing.borderRadius.lg,
-              padding: Spacing.md,
-            }}
+          <View
+            testID="prescription-check-result"
+            style={[
+              styles.resultsCard,
+              {
+                borderColor: result.allAvailable
+                  ? Colors.status.available.border
+                  : Colors.status.lowStock.border,
+              },
+            ]}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm }}>
-              <h3 style={{ margin: 0, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
+            <View style={styles.resultsHeader}>
+              <Text style={styles.resultsTitle}>
                 {result.allAvailable ? '✅ All Medicines In Stock' : '⚠️ Partial Availability'}
-              </h3>
+              </Text>
               <StatusBadge
                 label={result.allAvailable ? 'FULFILLABLE' : 'PARTIAL / ALTERNATIVES NEEDED'}
                 variant={result.allAvailable ? 'available' : 'lowStock'}
               />
-            </div>
+            </View>
 
             <StaleDataWarning
               lastUpdatedAt={result.lastUpdatedAt}
               resourceName="inventory"
             />
 
-            <div style={{ marginTop: Spacing.md, display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+            <View style={styles.resultsList}>
               {result.items.map((item) => (
-                <div
-                  key={item.medicineId}
-                  style={{
-                    padding: Spacing.sm,
-                    backgroundColor: Colors.surfaceSubtle,
-                    borderRadius: Spacing.borderRadius.sm,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: Typography.fontWeights.bold, fontSize: Typography.fontSizes.sm }}>
+                <View key={item.medicineId} style={styles.resultItemBox}>
+                  <View style={styles.resultItemTop}>
+                    <Text style={styles.resultItemName}>
                       {item.medicineName}
-                    </span>
+                    </Text>
                     <StatusBadge
-                      label={item.isAvailable ? `In Stock (${item.currentStock})` : `Shortage (${item.currentStock}/${item.requestedQuantity})`}
+                      label={
+                        item.isAvailable
+                          ? `In Stock (${item.currentStock})`
+                          : `Shortage (${item.currentStock}/${item.requestedQuantity})`
+                      }
                       variant={item.isAvailable ? 'available' : 'outOfStock'}
                     />
-                  </div>
+                  </View>
 
                   {!item.isAvailable && item.alternatives && item.alternatives.length > 0 && (
-                    <div style={{ marginTop: Spacing.xs, paddingLeft: Spacing.sm, borderLeft: `2px solid ${Colors.status.lowStock.border}` }}>
-                      <div style={{ fontSize: Typography.fontSizes.xs, fontWeight: Typography.fontWeights.medium, color: Colors.textPrimary }}>
+                    <View style={styles.alternativesBox}>
+                      <Text style={styles.alternativesLabel}>
                         Available Alternatives:
-                      </div>
+                      </Text>
                       {item.alternatives.map((alt) => (
-                        <div key={alt.id} style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
+                        <Text key={alt.id} style={styles.altText}>
                           • {alt.name} ({alt.genericName}) — Stock: {alt.currentStock || 0}
-                        </div>
+                        </Text>
                       ))}
-                    </div>
+                    </View>
                   )}
-                </div>
+                </View>
               ))}
-            </div>
-          </div>
+            </View>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  card: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  cardTitle: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  itemInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  itemName: {
+    fontWeight: Typography.fontWeights.medium,
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textPrimary,
+  },
+  itemQty: {
+    color: Colors.textMuted,
+    fontSize: Typography.fontSizes.xs,
+  },
+  removeText: {
+    color: Colors.status.outOfStock.text,
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  addRow: {
+    marginTop: Spacing.md,
+  },
+  addFieldsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  addCol: {
+    flex: 2,
+  },
+  addColSmall: {
+    flex: 1,
+  },
+  verifyButtonWrapper: {
+    marginTop: Spacing.md,
+  },
+  resultsCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+  },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  resultsTitle: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  resultsList: {
+    marginTop: Spacing.md,
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  resultItemBox: {
+    padding: Spacing.sm,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Spacing.borderRadius.sm,
+  },
+  resultItemTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  resultItemName: {
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textPrimary,
+  },
+  alternativesBox: {
+    marginTop: Spacing.xs,
+    paddingLeft: Spacing.sm,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.status.lowStock.border,
+  },
+  alternativesLabel: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+    color: Colors.textPrimary,
+  },
+  altText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+});
 
 export default MedicineAvailabilityCheckScreen;

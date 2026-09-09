@@ -1,5 +1,13 @@
-// Medicine Search Screen — Search Master Catalog with Generic Lookup & Deterministic Alternatives
+// Medicine Search Screen — Search Master Catalog with Generic Lookup & Deterministic Alternatives — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { medicineService } from '../../services/medicine.service';
 import { Medicine } from '../../types';
 import { Colors, Spacing, Typography } from '../../theme';
@@ -13,15 +21,19 @@ import {
 
 export interface MedicineSearchScreenProps {
   facilityId?: string;
-  onSelectMedicine: (medicine: Medicine) => void;
+  onSelectMedicine?: (medicine: Medicine) => void;
   onNavigateBack?: () => void;
 }
 
-export const MedicineSearchScreen: React.FC<MedicineSearchScreenProps> = ({
-  facilityId,
-  onSelectMedicine,
-  onNavigateBack,
-}) => {
+export const MedicineSearchScreen: React.FC<MedicineSearchScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const onSelectMedicine = props.onSelectMedicine || ((med: Medicine) => {
+    navigation.navigate('MedicineStock', { medicineId: med.id, medicineName: med.name });
+  });
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,68 +59,32 @@ export const MedicineSearchScreen: React.FC<MedicineSearchScreenProps> = ({
     searchMedicines('');
   }, [searchMedicines]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    searchMedicines(searchTerm);
-  };
-
   return (
-    <div
-      data-testid="medicine-search-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="medicine-search-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: Spacing.sm }}>
+      <View style={styles.header}>
+        <View style={styles.headerTitleRow}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginRight: Spacing.md,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: Typography.fontSizes.lg,
-                fontWeight: Typography.fontWeights.bold,
-                color: Colors.textPrimary,
-              }}
-            >
-              Medicine Catalog Search
-            </h2>
-            <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-              Search by brand name or generic chemical formula
-            </span>
-          </div>
-        </div>
+          <View>
+            <Text style={styles.screenTitle}>Medicine Catalog Search</Text>
+            <Text style={styles.screenSubtitle}>
+              Search by brand name or generic formula
+            </Text>
+          </View>
+        </View>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: Spacing.sm, alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrapper}>
             <TextInput
               value={searchTerm}
               onChangeText={(text) => {
@@ -117,20 +93,20 @@ export const MedicineSearchScreen: React.FC<MedicineSearchScreenProps> = ({
                   searchMedicines(text);
                 }
               }}
-              placeholder="e.g. Paracetamol, Amoxicillin, Metformin..."
+              placeholder="e.g. Paracetamol, Amoxicillin..."
               testID="medicine-search-input"
             />
-          </div>
+          </View>
           <Button
             title="Search"
             onPress={() => searchMedicines(searchTerm)}
             testID="search-submit-btn"
           />
-        </form>
-      </div>
+        </View>
+      </View>
 
       {/* Results List */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {loading && <LoadingState message="Searching medicines catalog..." />}
 
         {error && !loading && (
@@ -153,56 +129,129 @@ export const MedicineSearchScreen: React.FC<MedicineSearchScreenProps> = ({
         )}
 
         {!loading && !error && medicines.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+          <View style={styles.list}>
             {medicines.map((medicine) => (
-              <div
+              <TouchableOpacity
                 key={medicine.id}
-                onClick={() => onSelectMedicine(medicine)}
-                data-testid={`medicine-item-${medicine.id}`}
-                style={{
-                  backgroundColor: Colors.surface,
-                  border: `1px solid ${Colors.border}`,
-                  borderRadius: Spacing.borderRadius.lg,
-                  padding: Spacing.md,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                onPress={() => onSelectMedicine && onSelectMedicine(medicine)}
+                testID={`medicine-item-${medicine.id}`}
+                style={styles.medicineCard}
+                activeOpacity={0.7}
               >
-                <div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: Typography.fontSizes.sm,
-                      fontWeight: Typography.fontWeights.bold,
-                      color: Colors.textPrimary,
-                    }}
-                  >
+                <View style={styles.medicineInfo}>
+                  <Text style={styles.medicineName}>
                     {medicine.name}
-                  </h4>
-                  <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
-                    Generic: <span style={{ fontWeight: Typography.fontWeights.medium }}>{medicine.genericName}</span>
-                  </div>
-                  <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, marginTop: 2 }}>
+                  </Text>
+                  <Text style={styles.genericText}>
+                    Generic: <Text style={styles.bold}>{medicine.genericName}</Text>
+                  </Text>
+                  <Text style={styles.detailsText}>
                     {medicine.strength} • {medicine.dosageForm} • Unit: {medicine.unit}
-                  </div>
-                </div>
+                  </Text>
+                </View>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
+                <View style={styles.actionWrapper}>
                   <Button
                     title="View Stock →"
                     variant="outline"
-                    onPress={() => onSelectMedicine(medicine)}
+                    onPress={() => onSelectMedicine && onSelectMedicine(medicine)}
                   />
-                </div>
-              </div>
+                </View>
+              </TouchableOpacity>
             ))}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  backButton: {
+    marginRight: Spacing.md,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  screenSubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'center',
+  },
+  searchInputWrapper: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  list: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  medicineCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  medicineInfo: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  medicineName: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  genericText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  bold: {
+    fontWeight: Typography.fontWeights.medium,
+  },
+  detailsText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  actionWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
 
 export default MedicineSearchScreen;

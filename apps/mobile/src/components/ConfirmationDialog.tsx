@@ -1,5 +1,11 @@
-// Accessible Modal Confirmation Dialog for Irreversible Operations
+// Accessible Modal Confirmation Dialog for Irreversible Operations — React Native
 import React from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Button } from './Button';
 
@@ -28,65 +34,81 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onCancel,
   testID,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div
-      data-testid={testID}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: Spacing.lg,
-        boxSizing: 'border-box',
-      }}
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+      testID={testID}
     >
-      <div
-        style={{
-          backgroundColor: Colors.surface,
-          borderRadius: Spacing.borderRadius.lg,
-          padding: Spacing.xl,
-          maxWidth: 400,
-          width: '100%',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
-          {title}
-        </h3>
-        <p style={{ fontSize: Typography.fontSizes.sm, color: Colors.textSecondary, margin: `${Spacing.md}px 0` }}>
-          {message}
-        </p>
-        <div style={{ display: 'flex', gap: Spacing.md, marginTop: Spacing.lg }}>
-          <div style={{ flex: 1 }}>
-            <Button
-              title={cancelLabel}
-              onPress={onCancel}
-              variant="outline"
-              disabled={isLoading}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Button
-              title={confirmLabel}
-              onPress={onConfirm}
-              variant={isDestructive ? 'danger' : 'primary'}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+      <View style={styles.overlay}>
+        <View style={styles.dialog}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={cancelLabel}
+                onPress={onCancel}
+                variant="outline"
+                disabled={isLoading}
+              />
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={confirmLabel}
+                onPress={onConfirm}
+                variant={isDestructive ? 'danger' : 'primary'}
+                isLoading={isLoading}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.lg,
+  },
+  dialog: {
+    backgroundColor: Colors.surface,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.xl,
+    maxWidth: 400,
+    width: '100%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  title: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  message: {
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textSecondary,
+    marginVertical: Spacing.md,
+    lineHeight: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  buttonWrapper: {
+    flex: 1,
+  },
+});
 
 export default ConfirmationDialog;

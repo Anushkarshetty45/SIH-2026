@@ -1,5 +1,13 @@
-// Equipment Availability Screen — Real-time Facility Equipment Status & Freshness
+// Equipment Availability Screen — Real-time Facility Equipment Status & Freshness — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { equipmentService } from '../../services/equipment.service';
 import { Equipment } from '../../types';
 import { Colors, Spacing, Typography } from '../../theme';
@@ -13,18 +21,21 @@ import {
 } from '../../components';
 
 export interface EquipmentAvailabilityScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
   onSelectEquipment?: (equipment: Equipment) => void;
   onNavigateBack?: () => void;
 }
 
-export const EquipmentAvailabilityScreen: React.FC<EquipmentAvailabilityScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  onSelectEquipment,
-  onNavigateBack,
-}) => {
+export const EquipmentAvailabilityScreen: React.FC<EquipmentAvailabilityScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const onSelectEquipment = props.onSelectEquipment;
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
@@ -62,59 +73,23 @@ export const EquipmentAvailabilityScreen: React.FC<EquipmentAvailabilityScreenPr
   const totalEquip = equipmentList.reduce((sum, item) => sum + item.totalQuantity, 0);
 
   return (
-    <div
-      data-testid="equipment-availability-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="equipment-availability-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Equipment Availability
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            {facilityName}
-          </span>
-        </div>
+          <Text style={styles.screenTitle}>Equipment Availability</Text>
+          <Text style={styles.facilitySubtitle}>{facilityName}</Text>
+        </View>
 
         <Button
           title="Refresh"
@@ -123,65 +98,52 @@ export const EquipmentAvailabilityScreen: React.FC<EquipmentAvailabilityScreenPr
           isLoading={loading}
           testID="refresh-button"
         />
-      </div>
+      </View>
 
       {/* Freshness Banner */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+      <View style={styles.freshnessBanner}>
         <StaleDataWarning
           lastUpdatedAt={lastUpdatedAt}
           resourceName="equipment"
           testID="freshness-indicator"
         />
         {!loading && (
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
+          <Text style={styles.totalStatsText}>
             {totalAvailable} of {totalEquip} units operational
-          </span>
+          </Text>
         )}
-      </div>
+      </View>
 
       {/* Filter Tabs */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          display: 'flex',
-          gap: Spacing.xs,
-          overflowX: 'auto',
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-        }}
-      >
-        {['ALL', 'AVAILABLE_ONLY', 'OPERATIONAL', 'MAINTENANCE'].map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setSelectedFilter(filter)}
-            data-testid={`filter-${filter}`}
-            style={{
-              padding: `${Spacing.xs}px ${Spacing.sm}px`,
-              borderRadius: Spacing.borderRadius.full,
-              border: `1px solid ${selectedFilter === filter ? Colors.primary : Colors.border}`,
-              backgroundColor: selectedFilter === filter ? Colors.primary : Colors.surface,
-              color: selectedFilter === filter ? Colors.textInverse : Colors.textSecondary,
-              fontSize: Typography.fontSizes.xs,
-              fontWeight: Typography.fontWeights.medium,
-              cursor: 'pointer',
-            }}
-          >
-            {filter.replace('_', ' ')}
-          </button>
-        ))}
-      </div>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar}>
+        {['ALL', 'AVAILABLE_ONLY', 'OPERATIONAL', 'MAINTENANCE'].map((filter) => {
+          const isSelected = selectedFilter === filter;
+          return (
+            <TouchableOpacity
+              key={filter}
+              onPress={() => setSelectedFilter(filter)}
+              testID={`filter-${filter}`}
+              style={[
+                styles.filterPill,
+                isSelected && styles.filterPillSelected,
+              ]}
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  styles.filterPillText,
+                  isSelected && styles.filterPillTextSelected,
+                ]}
+              >
+                {filter.replace('_', ' ')}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {loading && <LoadingState message="Loading equipment status..." />}
 
         {error && !loading && (
@@ -202,24 +164,114 @@ export const EquipmentAvailabilityScreen: React.FC<EquipmentAvailabilityScreenPr
         )}
 
         {!loading && !error && filteredEquipment.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+          <View style={styles.list}>
             {filteredEquipment.map((item) => (
-              <div
+              <TouchableOpacity
                 key={item.id}
-                onClick={() => onSelectEquipment && onSelectEquipment(item)}
-                style={{ cursor: onSelectEquipment ? 'pointer' : 'default' }}
+                onPress={() => onSelectEquipment && onSelectEquipment(item)}
+                disabled={!onSelectEquipment}
+                activeOpacity={onSelectEquipment ? 0.7 : 1}
               >
                 <EquipmentCard
                   equipment={item}
                   testID={`equipment-card-${item.id}`}
                 />
-              </div>
+              </TouchableOpacity>
             ))}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  freshnessBanner: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalStatsText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+  filterBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+  },
+  filterPill: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginRight: Spacing.xs,
+  },
+  filterPillSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  filterPillText: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+    color: Colors.textSecondary,
+  },
+  filterPillTextSelected: {
+    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  list: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+});
 
 export default EquipmentAvailabilityScreen;

@@ -1,5 +1,6 @@
-// Compact Sync Status Indicator Pill
+// Compact Sync Status Indicator Pill — React Native
 import React from 'react';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { NetworkStatus } from '../types';
 
@@ -8,7 +9,7 @@ export interface SyncStatusProps {
   pendingCount?: number;
   lastSyncedText?: string;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const SyncStatus: React.FC<SyncStatusProps> = ({
@@ -33,43 +34,61 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingLeft: Spacing.sm,
-    paddingRight: Spacing.sm,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.xs,
-    backgroundColor: Colors.surfaceSubtle,
-    borderRadius: Spacing.borderRadius.full,
-    border: `1px solid ${Colors.borderLight}`,
-    fontSize: Typography.fontSizes.xs,
-    color: Colors.textSecondary,
-    ...style,
-  };
-
-  const dotStyle: React.CSSProperties = {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    backgroundColor: getIndicatorColor(),
-  };
-
   return (
-    <div style={containerStyle} data-testid={testID} role="status">
-      <span style={dotStyle} aria-hidden="true" />
-      <span>{status}</span>
+    <View
+      style={[styles.container, style]}
+      testID={testID}
+      accessibilityRole="summary"
+    >
+      <View
+        style={[styles.dot, { backgroundColor: getIndicatorColor() }]}
+        accessibilityElementsHidden={true}
+        importantForAccessibility="no"
+      />
+      <Text style={styles.text}>{status}</Text>
       {pendingCount > 0 && (
-        <span style={{ fontWeight: Typography.fontWeights.semibold, color: Colors.status.lowStock.text }}>
+        <Text style={styles.pendingText}>
           ({pendingCount} pending)
-        </span>
+        </Text>
       )}
       {lastSyncedText && status !== 'SYNCING' && (
-        <span style={{ color: Colors.textMuted }}>• {lastSyncedText}</span>
+        <Text style={styles.lastSyncedText}>• {lastSyncedText}</Text>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Spacing.borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    alignSelf: 'flex-start',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  text: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  pendingText: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.status.lowStock.text,
+  },
+  lastSyncedText: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+});
 
 export default SyncStatus;

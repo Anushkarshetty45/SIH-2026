@@ -1,5 +1,13 @@
-// Patient Appointment Card Component
+// Patient Appointment Card Component — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Appointment, AppointmentStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -8,7 +16,7 @@ export interface AppointmentCardProps {
   appointment: Appointment;
   onCancel?: () => void;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const AppointmentCard: React.FC<AppointmentCardProps> = ({
@@ -32,64 +40,116 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   };
 
   return (
-    <div
-      data-testid={testID}
-      style={{
-        backgroundColor: Colors.surface,
-        border: `1px solid ${Colors.border}`,
-        borderRadius: Spacing.borderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.md,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        ...style,
-      }}
+    <View
+      testID={testID}
+      style={[styles.container, style]}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xs }}>
-        <div>
-          <h4 style={{ margin: 0, fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>
             👤 {appointment.patient?.name || 'Patient'}
-          </h4>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          </Text>
+          <Text style={styles.subtitle}>
             Dr. {appointment.doctor?.specialization || 'Doctor'} • {appointment.facility?.name || 'Facility'}
-          </span>
-        </div>
+          </Text>
+        </View>
         <StatusBadge label={appointment.status} variant={getStatusVariant(appointment.status)} />
-      </div>
+      </View>
 
-      <div style={{ margin: `${Spacing.sm}px 0`, padding: Spacing.sm, backgroundColor: Colors.surfaceSubtle, borderRadius: Spacing.borderRadius.md }}>
-        <div style={{ fontSize: Typography.fontSizes.sm, fontWeight: Typography.fontWeights.semibold, color: Colors.primary }}>
+      <View style={styles.slotBox}>
+        <Text style={styles.slotText}>
           📅 {appointment.slot?.date ? String(appointment.slot.date).slice(0, 10) : 'Scheduled Date'} • ⏰ {appointment.slot?.startTime || 'Time Slot'}
-        </div>
-      </div>
+        </Text>
+      </View>
 
       {appointment.notes && (
-        <p style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, margin: `${Spacing.xs}px 0` }}>
+        <Text style={styles.notes}>
           Notes: {appointment.notes}
-        </p>
+        </Text>
       )}
 
       {onCancel && appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED' && (
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            marginTop: Spacing.sm,
-            width: '100%',
-            minHeight: Spacing.minTouchTarget,
-            backgroundColor: 'transparent',
-            color: Colors.status.rejected.text,
-            border: `1px solid ${Colors.status.rejected.border}`,
-            borderRadius: Spacing.borderRadius.md,
-            fontSize: Typography.fontSizes.xs,
-            fontWeight: Typography.fontWeights.semibold,
-            cursor: 'pointer',
-          }}
+        <TouchableOpacity
+          onPress={onCancel}
+          style={styles.cancelButton}
+          activeOpacity={0.7}
+          accessibilityRole="button"
         >
-          Cancel Appointment
-        </button>
+          <Text style={styles.cancelButtonText}>
+            Cancel Appointment
+          </Text>
+        </TouchableOpacity>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.xs,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  title: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  slotBox: {
+    marginVertical: Spacing.sm,
+    padding: Spacing.sm,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Spacing.borderRadius.md,
+  },
+  slotText: {
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.primary,
+  },
+  notes: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginVertical: Spacing.xs,
+  },
+  cancelButton: {
+    marginTop: Spacing.sm,
+    width: '100%',
+    minHeight: Spacing.minTouchTarget,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.status.rejected.border,
+    borderRadius: Spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    color: Colors.status.rejected.text,
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.semibold,
+  },
+});
 
 export default AppointmentCard;

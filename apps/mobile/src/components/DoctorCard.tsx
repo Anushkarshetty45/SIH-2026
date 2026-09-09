@@ -1,5 +1,13 @@
-// Doctor Information Card Component
+// Doctor Information Card Component — React Native
 import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Colors, Spacing, Typography } from '../theme';
 import { Doctor } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -8,7 +16,7 @@ export interface DoctorCardProps {
   doctor: Doctor;
   onSelectSlot?: () => void;
   testID?: string;
-  style?: React.CSSProperties;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const DoctorCard: React.FC<DoctorCardProps> = ({
@@ -17,56 +25,91 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
   testID,
   style,
 }) => {
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: Colors.surface,
-    border: `1px solid ${Colors.border}`,
-    borderRadius: Spacing.borderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    ...style,
-  };
-
   return (
-    <div style={containerStyle} data-testid={testID}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xs }}>
-        <h3 style={{ fontSize: Typography.fontSizes.md, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary, margin: 0 }}>
+    <View style={[styles.container, style]} testID={testID}>
+      <View style={styles.header}>
+        <Text style={styles.name}>
           {doctor.name || `Dr. ${doctor.specialization}`}
-        </h3>
+        </Text>
         <StatusBadge
           label={doctor.isAvailable ? 'Available' : 'Unavailable'}
           variant={doctor.isAvailable ? 'available' : 'outOfStock'}
         />
-      </div>
-      <p style={{ fontSize: Typography.fontSizes.sm, color: Colors.primary, fontWeight: Typography.fontWeights.medium, margin: `${Spacing.xs}px 0` }}>
+      </View>
+      <Text style={styles.specialization}>
         🩺 {doctor.specialization}
-      </p>
-      <p style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, margin: 0 }}>
+      </Text>
+      <Text style={styles.meta}>
         Reg No: {doctor.registrationNo} • {doctor.facilityName || 'Linked Facility'}
-      </p>
+      </Text>
 
       {onSelectSlot && (
-        <button
-          type="button"
-          onClick={onSelectSlot}
+        <TouchableOpacity
+          onPress={onSelectSlot}
           disabled={!doctor.isAvailable}
-          style={{
-            marginTop: Spacing.md,
-            width: '100%',
-            minHeight: Spacing.minTouchTarget,
-            backgroundColor: doctor.isAvailable ? Colors.primary : Colors.border,
-            color: Colors.textInverse,
-            border: 'none',
-            borderRadius: Spacing.borderRadius.md,
-            fontSize: Typography.fontSizes.sm,
-            fontWeight: Typography.fontWeights.semibold,
-            cursor: doctor.isAvailable ? 'pointer' : 'not-allowed',
-          }}
+          style={[
+            styles.slotButton,
+            {
+              backgroundColor: doctor.isAvailable
+                ? Colors.primary
+                : Colors.border,
+            },
+          ]}
+          activeOpacity={0.7}
+          accessibilityRole="button"
         >
-          Select Appointment Slot
-        </button>
+          <Text style={styles.slotButtonText}>Select Appointment Slot</Text>
+        </TouchableOpacity>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.xs,
+  },
+  name: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  specialization: {
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeights.medium,
+    marginVertical: Spacing.xs,
+  },
+  meta: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+  },
+  slotButton: {
+    marginTop: Spacing.md,
+    width: '100%',
+    minHeight: Spacing.minTouchTarget,
+    borderRadius: Spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotButtonText: {
+    color: Colors.textInverse,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.semibold,
+  },
+});
 
 export default DoctorCard;

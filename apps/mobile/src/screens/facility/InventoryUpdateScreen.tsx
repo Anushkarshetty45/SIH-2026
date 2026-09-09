@@ -1,5 +1,13 @@
-// Inventory Update Screen — Facility Stock Intake & Concurrency-Safe Adjustments
+// Inventory Update Screen — Facility Stock Intake & Concurrency-Safe Adjustments — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { inventoryService } from '../../services/inventory.service';
 import { MedicineStock, StockTransactionType } from '../../types';
 import { Colors, Spacing, Typography } from '../../theme';
@@ -10,19 +18,23 @@ import {
   LoadingState,
   StaleDataWarning,
   StatusBadge,
+  TextInput,
 } from '../../components';
 
 export interface InventoryUpdateScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
   onNavigateBack?: () => void;
 }
 
-export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  onNavigateBack,
-}) => {
+export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<MedicineStock[]>([]);
@@ -31,7 +43,7 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
 
   // Intake Form State
   const [intakeMedicineId, setIntakeMedicineId] = useState('');
-  const [intakeQty, setIntakeQty] = useState(100);
+  const [intakeQty, setIntakeQty] = useState('100');
   const [intakeBatch, setIntakeBatch] = useState('');
   const [intakeExpiry, setIntakeExpiry] = useState('');
   const [intakeSupplier, setIntakeSupplier] = useState('');
@@ -40,7 +52,7 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
   // Adjust Form State
   const [adjustMedicineId, setAdjustMedicineId] = useState('');
   const [adjustType, setAdjustType] = useState<StockTransactionType>('ISSUE');
-  const [adjustQty, setAdjustQty] = useState(10);
+  const [adjustQty, setAdjustQty] = useState('10');
   const [adjustReason, setAdjustReason] = useState('');
   const [adjustSubmitting, setAdjustSubmitting] = useState(false);
 
@@ -62,15 +74,15 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
     fetchInventory();
   }, [fetchInventory]);
 
-  const handleIntakeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!intakeMedicineId.trim() || intakeQty <= 0) return;
+  const handleIntakeSubmit = async () => {
+    const qty = parseInt(intakeQty, 10) || 0;
+    if (!intakeMedicineId.trim() || qty <= 0) return;
     setIntakeSubmitting(true);
     try {
       await inventoryService.recordIntake({
         facilityId,
         medicineId: intakeMedicineId.trim(),
-        quantity: intakeQty,
+        quantity: qty,
         batchNumber: intakeBatch.trim() || undefined,
         expiryDate: intakeExpiry.trim() || undefined,
         supplier: intakeSupplier.trim() || undefined,
@@ -88,16 +100,16 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
     }
   };
 
-  const handleAdjustSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adjustMedicineId.trim() || adjustQty <= 0) return;
+  const handleAdjustSubmit = async () => {
+    const qty = parseInt(adjustQty, 10) || 0;
+    if (!adjustMedicineId.trim() || qty <= 0) return;
     setAdjustSubmitting(true);
     try {
       await inventoryService.adjustStock({
         facilityId,
         medicineId: adjustMedicineId.trim(),
         type: adjustType,
-        quantity: adjustQty,
+        quantity: qty,
         reason: adjustReason.trim() || undefined,
       });
       setAdjustMedicineId('');
@@ -112,109 +124,57 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
   };
 
   return (
-    <div
-      data-testid="inventory-update-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="inventory-update-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Manage Facility Inventory
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            {facilityName} • Stock intake, batch logging, and adjustments
-          </span>
-        </div>
+          <Text style={styles.screenTitle}>Manage Facility Inventory</Text>
+          <Text style={styles.facilitySubtitle}>
+            {facilityName} • Stock intake, batch logging, adjustments
+          </Text>
+        </View>
 
-        <div style={{ display: 'flex', gap: Spacing.xs }}>
+        <View style={styles.headerActions}>
           <Button
-            title="Stock Intake (+)"
+            title="Intake (+)"
             variant={activeTab === 'INTAKE' ? 'primary' : 'outline'}
             onPress={() => setActiveTab('INTAKE')}
           />
           <Button
-            title="Adjust Stock (±)"
+            title="Adjust (±)"
             variant={activeTab === 'ADJUST' ? 'primary' : 'outline'}
             onPress={() => setActiveTab('ADJUST')}
           />
-        </div>
-      </div>
+        </View>
+      </View>
 
       {/* Freshness Bar */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+      <View style={styles.freshnessBar}>
         <StaleDataWarning lastUpdatedAt={lastUpdatedAt} resourceName="inventory records" />
         {activeTab !== 'LIST' && (
-          <button
-            onClick={() => setActiveTab('LIST')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: Colors.primary,
-              cursor: 'pointer',
-              fontSize: Typography.fontSizes.xs,
-            }}
-          >
-            ← Back to Inventory List
-          </button>
+          <TouchableOpacity onPress={() => setActiveTab('LIST')} style={styles.backToListButton}>
+            <Text style={styles.backToListText}>← Back to List</Text>
+          </TouchableOpacity>
         )}
-      </div>
+      </View>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {error && <ErrorState title="Inventory Action Failed" message={error} onRetry={fetchInventory} />}
 
         {/* Tab: LIST */}
         {activeTab === 'LIST' && (
-          <div>
+          <View>
             {loading && <LoadingState message="Loading inventory balance..." />}
 
             {!loading && inventoryItems.length === 0 && (
@@ -227,211 +187,354 @@ export const InventoryUpdateScreen: React.FC<InventoryUpdateScreenProps> = ({
             )}
 
             {!loading && inventoryItems.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+              <View style={styles.list}>
                 {inventoryItems.map((item) => (
-                  <div
+                  <View
                     key={item.id}
-                    data-testid={`inventory-item-${item.id}`}
-                    style={{
-                      backgroundColor: Colors.surface,
-                      border: `1px solid ${Colors.border}`,
-                      borderRadius: Spacing.borderRadius.lg,
-                      padding: Spacing.md,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
+                    testID={`inventory-item-${item.id}`}
+                    style={styles.itemCard}
                   >
-                    <div>
-                      <div style={{ fontWeight: Typography.fontWeights.bold, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName}>
                         {item.medicine?.name || item.medicineId}
-                      </div>
-                      <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+                      </Text>
+                      <Text style={styles.itemMeta}>
                         Generic: {item.medicine?.genericName || 'N/A'} • Reorder Level: {item.reorderLevel}
-                      </div>
+                      </Text>
                       {item.batchNumber && (
-                        <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, marginTop: 2 }}>
+                        <Text style={styles.itemBatch}>
                           Batch: {item.batchNumber} {item.expiryDate ? `• Exp: ${item.expiryDate}` : ''}
-                        </div>
+                        </Text>
                       )}
-                    </div>
+                    </View>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: Spacing.xs }}>
-                      <span style={{ fontSize: Typography.fontSizes.lg, fontWeight: Typography.fontWeights.bold, color: Colors.primary }}>
+                    <View style={styles.itemStockCol}>
+                      <Text style={styles.itemStockQty}>
                         {item.currentStock} {item.unit}
-                      </span>
+                      </Text>
                       <StatusBadge
-                        label={item.currentStock === 0 ? 'Out of Stock' : item.currentStock <= item.reorderLevel ? 'Low Stock' : 'In Stock'}
-                        variant={item.currentStock === 0 ? 'outOfStock' : item.currentStock <= item.reorderLevel ? 'lowStock' : 'available'}
+                        label={
+                          item.currentStock === 0
+                            ? 'Out of Stock'
+                            : item.currentStock <= item.reorderLevel
+                            ? 'Low Stock'
+                            : 'In Stock'
+                        }
+                        variant={
+                          item.currentStock === 0
+                            ? 'outOfStock'
+                            : item.currentStock <= item.reorderLevel
+                            ? 'lowStock'
+                            : 'available'
+                        }
                       />
-                    </div>
-                  </div>
+                    </View>
+                  </View>
                 ))}
-              </div>
+              </View>
             )}
-          </div>
+          </View>
         )}
 
         {/* Tab: INTAKE */}
         {activeTab === 'INTAKE' && (
-          <form
-            onSubmit={handleIntakeSubmit}
-            data-testid="intake-form"
-            style={{
-              backgroundColor: Colors.surface,
-              border: `1px solid ${Colors.border}`,
-              borderRadius: Spacing.borderRadius.lg,
-              padding: Spacing.lg,
-              maxWidth: 500,
-              margin: '0 auto',
-            }}
-          >
-            <h3 style={{ margin: `0 0 ${Spacing.md}px`, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>
               Record Stock Intake / Receipt
-            </h3>
+            </Text>
 
-            <div style={{ marginBottom: Spacing.sm }}>
-              <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Medicine ID</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. med-paracetamol-500"
-                value={intakeMedicineId}
-                onChange={(e) => setIntakeMedicineId(e.target.value)}
-                style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
-              />
-            </div>
+            <TextInput
+              label="Medicine ID"
+              placeholder="e.g. med-paracetamol-500"
+              value={intakeMedicineId}
+              onChangeText={setIntakeMedicineId}
+              required
+            />
 
-            <div style={{ display: 'flex', gap: Spacing.sm, marginBottom: Spacing.sm }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Quantity</label>
-                <input
-                  type="number"
-                  required
-                  min={1}
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <TextInput
+                  label="Quantity"
                   value={intakeQty}
-                  onChange={(e) => setIntakeQty(Number(e.target.value))}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
+                  onChangeText={setIntakeQty}
+                  keyboardType="numeric"
+                  required
                 />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Batch Number</label>
-                <input
-                  type="text"
+              </View>
+              <View style={styles.formCol}>
+                <TextInput
+                  label="Batch Number"
                   placeholder="e.g. BATCH-2026-A"
                   value={intakeBatch}
-                  onChange={(e) => setIntakeBatch(e.target.value)}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
+                  onChangeText={setIntakeBatch}
                 />
-              </div>
-            </div>
+              </View>
+            </View>
 
-            <div style={{ display: 'flex', gap: Spacing.sm, marginBottom: Spacing.md }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Expiry Date</label>
-                <input
-                  type="date"
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <TextInput
+                  label="Expiry Date"
+                  placeholder="YYYY-MM-DD"
                   value={intakeExpiry}
-                  onChange={(e) => setIntakeExpiry(e.target.value)}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
+                  onChangeText={setIntakeExpiry}
                 />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Supplier</label>
-                <input
-                  type="text"
+              </View>
+              <View style={styles.formCol}>
+                <TextInput
+                  label="Supplier"
                   placeholder="e.g. District Central Store"
                   value={intakeSupplier}
-                  onChange={(e) => setIntakeSupplier(e.target.value)}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
+                  onChangeText={setIntakeSupplier}
                 />
-              </div>
-            </div>
+              </View>
+            </View>
 
-            <div style={{ display: 'flex', gap: Spacing.sm, justifyContent: 'flex-end' }}>
-              <Button title="Cancel" variant="outline" onPress={() => setActiveTab('LIST')} />
-              <Button title="Record Intake" onPress={() => {}} isLoading={intakeSubmitting} />
-            </div>
-          </form>
+            <View style={styles.formActions}>
+              <View style={styles.actionBtn}>
+                <Button title="Cancel" variant="outline" onPress={() => setActiveTab('LIST')} />
+              </View>
+              <View style={styles.actionBtn}>
+                <Button title="Record Intake" onPress={handleIntakeSubmit} isLoading={intakeSubmitting} />
+              </View>
+            </View>
+          </View>
         )}
 
         {/* Tab: ADJUST */}
         {activeTab === 'ADJUST' && (
-          <form
-            onSubmit={handleAdjustSubmit}
-            data-testid="adjust-form"
-            style={{
-              backgroundColor: Colors.surface,
-              border: `1px solid ${Colors.border}`,
-              borderRadius: Spacing.borderRadius.lg,
-              padding: Spacing.lg,
-              maxWidth: 500,
-              margin: '0 auto',
-            }}
-          >
-            <h3 style={{ margin: `0 0 ${Spacing.md}px`, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>
               Concurrency-Safe Stock Adjustment
-            </h3>
+            </Text>
 
-            <div style={{ marginBottom: Spacing.sm }}>
-              <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Medicine ID</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. med-paracetamol-500"
-                value={adjustMedicineId}
-                onChange={(e) => setAdjustMedicineId(e.target.value)}
-                style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
-              />
-            </div>
+            <TextInput
+              label="Medicine ID"
+              placeholder="e.g. med-paracetamol-500"
+              value={adjustMedicineId}
+              onChangeText={setAdjustMedicineId}
+              required
+            />
 
-            <div style={{ display: 'flex', gap: Spacing.sm, marginBottom: Spacing.sm }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Action Type</label>
-                <select
-                  value={adjustType}
-                  onChange={(e) => setAdjustType(e.target.value as StockTransactionType)}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
+            <Text style={styles.actionTypeLabel}>Action Type</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typePillsRow}>
+              {(['ISSUE', 'RECEIPT', 'ADJUSTMENT', 'CORRECTION'] as StockTransactionType[]).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setAdjustType(type)}
+                  style={[
+                    styles.typePill,
+                    adjustType === type && styles.typePillActive,
+                  ]}
+                  accessibilityRole="button"
                 >
-                  <option value="ISSUE">ISSUE (Dispense / Decrement)</option>
-                  <option value="RECEIPT">RECEIPT (Increment)</option>
-                  <option value="ADJUSTMENT">ADJUSTMENT (Audit count sync)</option>
-                  <option value="CORRECTION">CORRECTION (Error fix)</option>
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Quantity</label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  value={adjustQty}
-                  onChange={(e) => setAdjustQty(Number(e.target.value))}
-                  style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
-                />
-              </div>
-            </div>
+                  <Text
+                    style={[
+                      styles.typePillText,
+                      adjustType === type && styles.typePillTextActive,
+                    ]}
+                  >
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-            <div style={{ marginBottom: Spacing.md }}>
-              <label style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>Reason / Reference</label>
-              <input
-                type="text"
-                placeholder="e.g. OPD Dispense, Damaged ampoule, Physical count discrepancy"
-                value={adjustReason}
-                onChange={(e) => setAdjustReason(e.target.value)}
-                style={{ width: '100%', padding: Spacing.sm, marginTop: 4, borderRadius: Spacing.borderRadius.sm, border: `1px solid ${Colors.border}` }}
-              />
-            </div>
+            <TextInput
+              label="Quantity"
+              value={adjustQty}
+              onChangeText={setAdjustQty}
+              keyboardType="numeric"
+              required
+            />
 
-            <div style={{ display: 'flex', gap: Spacing.sm, justifyContent: 'flex-end' }}>
-              <Button title="Cancel" variant="outline" onPress={() => setActiveTab('LIST')} />
-              <Button title="Confirm Adjustment" onPress={() => {}} isLoading={adjustSubmitting} />
-            </div>
-          </form>
+            <TextInput
+              label="Reason / Reference"
+              placeholder="e.g. OPD Dispense, Damaged ampoule"
+              value={adjustReason}
+              onChangeText={setAdjustReason}
+            />
+
+            <View style={styles.formActions}>
+              <View style={styles.actionBtn}>
+                <Button title="Cancel" variant="outline" onPress={() => setActiveTab('LIST')} />
+              </View>
+              <View style={styles.actionBtn}>
+                <Button title="Confirm Adjustment" onPress={handleAdjustSubmit} isLoading={adjustSubmitting} />
+              </View>
+            </View>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  freshnessBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backToListButton: {
+    padding: Spacing.xs,
+  },
+  backToListText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.semibold,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  list: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  itemCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  itemInfo: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  itemName: {
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.md,
+    color: Colors.textPrimary,
+  },
+  itemMeta: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  itemBatch: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  itemStockCol: {
+    alignItems: 'flex-end',
+    gap: Spacing.xs,
+  },
+  itemStockQty: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.primary,
+  },
+  formCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.lg,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  formTitle: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  formCol: {
+    flex: 1,
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    justifyContent: 'flex-end',
+    marginTop: Spacing.md,
+  },
+  actionBtn: {
+    flex: 1,
+  },
+  actionTypeLabel: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  typePillsRow: {
+    flexDirection: 'row',
+    marginBottom: Spacing.md,
+  },
+  typePill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: Spacing.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceSubtle,
+    marginRight: 6,
+  },
+  typePillActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primarySurface,
+  },
+  typePillText: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+  },
+  typePillTextActive: {
+    color: Colors.primary,
+    fontWeight: Typography.fontWeights.bold,
+  },
+});
 
 export default InventoryUpdateScreen;

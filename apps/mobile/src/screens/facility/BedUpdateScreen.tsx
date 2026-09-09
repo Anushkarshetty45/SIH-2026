@@ -1,5 +1,13 @@
-// Bed Update Screen — Facility Staff / Admin Bed Status Management
+// Bed Update Screen — Facility Staff / Admin Bed Status Management — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { bedService } from '../../services/bed.service';
 import { Bed, BedStatus } from '../../types';
 import { Colors, Spacing, Typography } from '../../theme';
@@ -14,7 +22,7 @@ import {
 } from '../../components';
 
 export interface BedUpdateScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
   onNavigateBack?: () => void;
 }
@@ -27,11 +35,14 @@ const BED_STATUSES: BedStatus[] = [
   'UNAVAILABLE',
 ];
 
-export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  onNavigateBack,
-}) => {
+export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [beds, setBeds] = useState<Bed[]>([]);
@@ -87,59 +98,25 @@ export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = ({
   });
 
   return (
-    <div
-      data-testid="bed-update-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="bed-update-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            Manage Facility Beds
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
-            {facilityName} • Update live occupancy and ward allocations
-          </span>
-        </div>
+          <Text style={styles.screenTitle}>Manage Facility Beds</Text>
+          <Text style={styles.facilitySubtitle}>
+            {facilityName} • Update live occupancy
+          </Text>
+        </View>
 
         <Button
           title="Refresh"
@@ -148,53 +125,43 @@ export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = ({
           isLoading={loading}
           testID="refresh-button"
         />
-      </div>
+      </View>
 
       {/* Freshness Bar */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-        }}
-      >
+      <View style={styles.freshnessBar}>
         <StaleDataWarning lastUpdatedAt={lastUpdatedAt} resourceName="bed status" />
-      </div>
+      </View>
 
       {/* Filter Tabs */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          display: 'flex',
-          gap: Spacing.xs,
-          overflowX: 'auto',
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-        }}
-      >
-        {['ALL', 'AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'].map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setStatusFilter(filter)}
-            data-testid={`filter-${filter}`}
-            style={{
-              padding: `${Spacing.xs}px ${Spacing.sm}px`,
-              borderRadius: Spacing.borderRadius.full,
-              border: `1px solid ${statusFilter === filter ? Colors.primary : Colors.border}`,
-              backgroundColor: statusFilter === filter ? Colors.primary : Colors.surface,
-              color: statusFilter === filter ? Colors.textInverse : Colors.textSecondary,
-              fontSize: Typography.fontSizes.xs,
-              fontWeight: Typography.fontWeights.medium,
-              cursor: 'pointer',
-            }}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar}>
+        {['ALL', 'AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'].map((filter) => {
+          const isSelected = statusFilter === filter;
+          return (
+            <TouchableOpacity
+              key={filter}
+              onPress={() => setStatusFilter(filter)}
+              testID={`filter-${filter}`}
+              style={[
+                styles.filterPill,
+                isSelected && styles.filterPillSelected,
+              ]}
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  styles.filterPillText,
+                  isSelected && styles.filterPillTextSelected,
+                ]}
+              >
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {loading && <LoadingState message="Loading facility bed roster..." />}
 
         {error && !loading && (
@@ -211,66 +178,65 @@ export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = ({
         )}
 
         {!loading && !error && filteredBeds.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+          <View style={styles.list}>
             {filteredBeds.map((bed) => (
-              <div
+              <View
                 key={bed.id}
-                data-testid={`bed-row-${bed.id}`}
-                style={{
-                  backgroundColor: Colors.surface,
-                  border: `1px solid ${Colors.border}`,
-                  borderRadius: Spacing.borderRadius.lg,
-                  padding: Spacing.md,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                testID={`bed-row-${bed.id}`}
+                style={styles.bedCard}
               >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-                    <span style={{ fontWeight: Typography.fontWeights.bold, fontSize: Typography.fontSizes.md, color: Colors.textPrimary }}>
+                <View style={styles.bedCardTop}>
+                  <View>
+                    <Text style={styles.bedNumber}>
                       Bed {bed.bedNumber}
-                    </span>
-                    <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+                    </Text>
+                    <Text style={styles.bedWard}>
                       {bed.ward} ({bed.category})
-                    </span>
-                  </div>
-                  <div style={{ marginTop: Spacing.xs }}>
-                    <StatusBadge
-                      label={bed.status}
-                      variant={bed.status === 'AVAILABLE' ? 'available' : bed.status === 'OCCUPIED' ? 'confirmed' : 'pending'}
-                    />
-                  </div>
-                </div>
+                    </Text>
+                  </View>
+                  <StatusBadge
+                    label={bed.status}
+                    variant={
+                      bed.status === 'AVAILABLE'
+                        ? 'available'
+                        : bed.status === 'OCCUPIED'
+                        ? 'confirmed'
+                        : 'pending'
+                    }
+                  />
+                </View>
 
-                {/* Status Selector */}
-                <div style={{ display: 'flex', gap: Spacing.xs, alignItems: 'center' }}>
-                  <select
-                    value={bed.status}
-                    onChange={(e) => handleStatusChangeRequest(bed, e.target.value as BedStatus)}
-                    data-testid={`bed-status-select-${bed.id}`}
-                    style={{
-                      padding: `${Spacing.xs}px ${Spacing.sm}px`,
-                      borderRadius: Spacing.borderRadius.sm,
-                      border: `1px solid ${Colors.border}`,
-                      backgroundColor: Colors.surface,
-                      fontSize: Typography.fontSizes.xs,
-                      fontWeight: Typography.fontWeights.medium,
-                      cursor: 'pointer',
-                    }}
-                  >
+                {/* Status Action Buttons */}
+                <View style={styles.statusActionRow}>
+                  <Text style={styles.changeLabel}>Change:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {BED_STATUSES.map((st) => (
-                      <option key={st} value={st}>
-                        {st}
-                      </option>
+                      <TouchableOpacity
+                        key={st}
+                        onPress={() => handleStatusChangeRequest(bed, st)}
+                        style={[
+                          styles.statusActionButton,
+                          bed.status === st && styles.statusActionButtonActive,
+                        ]}
+                        accessibilityRole="button"
+                      >
+                        <Text
+                          style={[
+                            styles.statusActionText,
+                            bed.status === st && styles.statusActionTextActive,
+                          ]}
+                        >
+                          {st}
+                        </Text>
+                      </TouchableOpacity>
                     ))}
-                  </select>
-                </div>
-              </div>
+                  </ScrollView>
+                </View>
+              </View>
             ))}
-          </div>
+          </View>
         )}
-      </div>
+      </ScrollView>
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog
@@ -284,8 +250,148 @@ export const BedUpdateScreen: React.FC<BedUpdateScreenProps> = ({
           setTargetStatus(null);
         }}
       />
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  freshnessBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  filterBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+  },
+  filterPill: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Spacing.borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginRight: Spacing.xs,
+  },
+  filterPillSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  filterPillText: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.medium,
+    color: Colors.textSecondary,
+  },
+  filterPillTextSelected: {
+    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  list: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  bedCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  bedCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  bedNumber: {
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.md,
+    color: Colors.textPrimary,
+  },
+  bedWard: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  statusActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  changeLabel: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginRight: Spacing.xs,
+  },
+  statusActionButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: Spacing.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginRight: 6,
+    backgroundColor: Colors.surfaceSubtle,
+  },
+  statusActionButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primarySurface,
+  },
+  statusActionText: {
+    fontSize: 10,
+    color: Colors.textSecondary,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  statusActionTextActive: {
+    color: Colors.primary,
+    fontWeight: Typography.fontWeights.bold,
+  },
+});
 
 export default BedUpdateScreen;

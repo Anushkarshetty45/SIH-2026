@@ -1,5 +1,13 @@
-// Medicine Stock Screen — Facility-level stock with freshness, transactions & controlled alternatives
+// Medicine Stock Screen — Facility-level stock with freshness, transactions & controlled alternatives — React Native
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { inventoryService } from '../../services/inventory.service';
 import { medicineService } from '../../services/medicine.service';
 import {
@@ -19,20 +27,35 @@ import {
 } from '../../components';
 
 export interface MedicineStockScreenProps {
-  facilityId: string;
+  facilityId?: string;
   facilityName?: string;
-  medicine: Medicine;
+  medicine?: Medicine;
   onNavigateBack?: () => void;
   onSelectAlternative?: (alt: ControlledAlternative) => void;
 }
 
-export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
-  facilityId,
-  facilityName = 'Healthcare Facility',
-  medicine,
-  onNavigateBack,
-  onSelectAlternative,
-}) => {
+export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = (props) => {
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+
+  const facilityId = props.facilityId || route.params?.facilityId || 'fac-sdh-manchar';
+  const facilityName = props.facilityName || route.params?.facilityName || 'Healthcare Facility';
+  const medicine: Medicine = props.medicine || route.params?.medicine || {
+    id: route.params?.medicineId || 'med-paracetamol-500',
+    name: route.params?.medicineName || 'Paracetamol 500mg',
+    genericName: 'Paracetamol',
+    strength: '500mg',
+    dosageForm: 'Tablet',
+    category: 'Analgesic',
+    unit: 'Tablets',
+    isControlled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const onNavigateBack = props.onNavigateBack || (navigation.canGoBack() ? () => navigation.goBack() : undefined);
+  const onSelectAlternative = props.onSelectAlternative;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stock, setStock] = useState<MedicineStock | null>(null);
@@ -44,7 +67,6 @@ export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // Fetch both stock and alternatives in parallel
       const [stockData, altData] = await Promise.all([
         inventoryService.getFacilityMedicineStock(facilityId, medicine.id).catch(() => null),
         medicineService.getAlternatives(medicine.id, facilityId).catch(() => null),
@@ -55,7 +77,6 @@ export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
         setTransactions(stockData.transactions || []);
         setLastUpdatedAt(stockData.lastUpdatedAt || new Date().toISOString());
       } else {
-        // Construct fallback zero-stock object
         setStock({
           id: `stock-${medicine.id}`,
           facilityId,
@@ -86,59 +107,25 @@ export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
   }, [fetchStockAndAlternatives]);
 
   return (
-    <div
-      data-testid="medicine-stock-screen"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: Colors.background,
-      }}
-    >
+    <View testID="medicine-stock-screen" style={styles.container}>
       {/* Header */}
-      <div
-        style={{
-          padding: `${Spacing.md}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surface,
-          borderBottom: `1px solid ${Colors.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onNavigateBack && (
-            <button
-              onClick={onNavigateBack}
-              data-testid="back-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: Colors.primary,
-                cursor: 'pointer',
-                fontSize: Typography.fontSizes.sm,
-                fontWeight: Typography.fontWeights.medium,
-                padding: 0,
-                marginBottom: Spacing.xs,
-              }}
+            <TouchableOpacity
+              onPress={onNavigateBack}
+              testID="back-button"
+              style={styles.backButton}
+              accessibilityRole="button"
             >
-              ← Back
-            </button>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
           )}
-          <h2
-            style={{
-              margin: 0,
-              fontSize: Typography.fontSizes.lg,
-              fontWeight: Typography.fontWeights.bold,
-              color: Colors.textPrimary,
-            }}
-          >
-            {medicine.name}
-          </h2>
-          <span style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+          <Text style={styles.screenTitle}>{medicine.name}</Text>
+          <Text style={styles.facilitySubtitle}>
             {facilityName} • Generic: {medicine.genericName}
-          </span>
-        </div>
+          </Text>
+        </View>
 
         <Button
           title="Refresh"
@@ -147,25 +134,19 @@ export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
           isLoading={loading}
           testID="refresh-button"
         />
-      </div>
+      </View>
 
       {/* Freshness Indicator */}
-      <div
-        style={{
-          padding: `${Spacing.sm}px ${Spacing.lg}px`,
-          backgroundColor: Colors.surfaceSubtle,
-          borderBottom: `1px solid ${Colors.border}`,
-        }}
-      >
+      <View style={styles.freshnessBar}>
         <StaleDataWarning
           lastUpdatedAt={lastUpdatedAt}
           resourceName="medicine inventory"
           testID="freshness-indicator"
         />
-      </div>
+      </View>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: Spacing.lg, overflowY: 'auto' }}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {loading && <LoadingState message="Checking inventory records..." />}
 
         {error && !loading && (
@@ -177,119 +158,225 @@ export const MedicineStockScreen: React.FC<MedicineStockScreenProps> = ({
         )}
 
         {!loading && !error && stock && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.lg }}>
+          <View style={styles.stockLayout}>
             {/* Primary Stock Card */}
-            <div>
-              <h4 style={{ margin: `0 0 ${Spacing.xs}px`, fontSize: Typography.fontSizes.sm, color: Colors.textSecondary }}>
+            <View>
+              <Text style={styles.sectionLabel}>
                 CURRENT STOCK LEVEL
-              </h4>
+              </Text>
               <MedicineStockCard
                 stock={stock}
                 alternatives={alternatives}
                 testID="primary-stock-card"
               />
-            </div>
+            </View>
 
             {/* Controlled Deterministic Alternatives */}
             {alternatives.length > 0 && (
-              <div>
-                <h4 style={{ margin: `0 0 ${Spacing.xs}px`, fontSize: Typography.fontSizes.sm, color: Colors.textSecondary }}>
+              <View>
+                <Text style={styles.sectionLabel}>
                   CONTROLLED DETERMINISTIC ALTERNATIVES
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+                </Text>
+                <View style={styles.altList}>
                   {alternatives.map((alt) => (
-                    <div
+                    <View
                       key={alt.id}
-                      style={{
-                        backgroundColor: Colors.surface,
-                        border: `1px solid ${Colors.border}`,
-                        borderRadius: Spacing.borderRadius.md,
-                        padding: Spacing.md,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                      data-testid={`alt-item-${alt.id}`}
+                      style={styles.altCard}
+                      testID={`alt-item-${alt.id}`}
                     >
-                      <div>
-                        <div style={{ fontWeight: Typography.fontWeights.bold, fontSize: Typography.fontSizes.sm, color: Colors.textPrimary }}>
+                      <View style={styles.altInfo}>
+                        <Text style={styles.altName}>
                           {alt.name}
-                        </div>
-                        <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+                        </Text>
+                        <Text style={styles.altGeneric}>
                           Generic: {alt.genericName} ({alt.strength}, {alt.dosageForm})
-                        </div>
+                        </Text>
                         {alt.notes && (
-                          <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted, marginTop: 2 }}>
+                          <Text style={styles.altNotes}>
                             {alt.notes}
-                          </div>
+                          </Text>
                         )}
-                      </div>
+                      </View>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
+                      <View style={styles.altActionCol}>
                         <StatusBadge
                           label={alt.isAvailableAtFacility ? `In Stock (${alt.currentStock || 0})` : 'Out of Stock'}
                           variant={alt.isAvailableAtFacility ? 'available' : 'outOfStock'}
                         />
                         {onSelectAlternative && (
-                          <Button
-                            title="Select"
-                            variant="outline"
-                            onPress={() => onSelectAlternative(alt)}
-                          />
+                          <View style={styles.selectBtnWrapper}>
+                            <Button
+                              title="Select"
+                              variant="outline"
+                              onPress={() => onSelectAlternative(alt)}
+                            />
+                          </View>
                         )}
-                      </div>
-                    </div>
+                      </View>
+                    </View>
                   ))}
-                </div>
-              </div>
+                </View>
+              </View>
             )}
 
             {/* Recent Transactions */}
             {transactions.length > 0 && (
-              <div>
-                <h4 style={{ margin: `0 0 ${Spacing.xs}px`, fontSize: Typography.fontSizes.sm, color: Colors.textSecondary }}>
+              <View>
+                <Text style={styles.sectionLabel}>
                   RECENT STOCK TRANSACTIONS
-                </h4>
-                <div
-                  style={{
-                    backgroundColor: Colors.surface,
-                    border: `1px solid ${Colors.border}`,
-                    borderRadius: Spacing.borderRadius.md,
-                    overflow: 'hidden',
-                  }}
-                >
+                </Text>
+                <View style={styles.transactionsContainer}>
                   {transactions.map((tx) => (
-                    <div
-                      key={tx.id}
-                      style={{
-                        padding: `${Spacing.sm}px ${Spacing.md}px`,
-                        borderBottom: `1px solid ${Colors.border}`,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: Typography.fontSizes.xs, fontWeight: Typography.fontWeights.bold, color: Colors.textPrimary }}>
+                    <View key={tx.id} style={styles.transactionRow}>
+                      <View>
+                        <Text style={styles.txType}>
                           {tx.type} • {tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity} {stock.unit}
-                        </div>
-                        <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textMuted }}>
+                        </Text>
+                        <Text style={styles.txDate}>
                           {new Date(tx.createdAt).toLocaleDateString()} {tx.batchNumber ? `(Batch: ${tx.batchNumber})` : ''}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: Typography.fontSizes.xs, color: Colors.textSecondary }}>
+                        </Text>
+                      </View>
+                      <Text style={styles.txBalance}>
                         Balance: {tx.balanceAfter}
-                      </div>
-                    </div>
+                      </Text>
+                    </View>
                   ))}
-                </div>
-              </div>
+                </View>
+              </View>
             )}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: Spacing.xs,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  screenTitle: {
+    fontSize: Typography.fontSizes.lg,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  facilitySubtitle: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  freshnessBar: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.surfaceSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  contentContainer: {
+    padding: Spacing.lg,
+  },
+  stockLayout: {
+    flexDirection: 'column',
+    gap: Spacing.lg,
+  },
+  sectionLabel: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+    fontWeight: Typography.fontWeights.semibold,
+  },
+  altList: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+  },
+  altCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.md,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  altInfo: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  altName: {
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.sm,
+    color: Colors.textPrimary,
+  },
+  altGeneric: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  altNotes: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  altActionCol: {
+    alignItems: 'flex-end',
+    gap: Spacing.xs,
+  },
+  selectBtnWrapper: {
+    marginTop: 4,
+  },
+  transactionsContainer: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.borderRadius.md,
+    overflow: 'hidden',
+  },
+  transactionRow: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  txType: {
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+  },
+  txDate: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  txBalance: {
+    fontSize: Typography.fontSizes.xs,
+    color: Colors.textSecondary,
+  },
+});
 
 export default MedicineStockScreen;

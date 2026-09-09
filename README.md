@@ -594,6 +594,11 @@ Please do not commit secrets, tokens, or `.env` files.
 
 ## License
 
-A license has not yet been specified for this repository. License information will be added here once decided.
+MIT License
 
+Copyright (c) 2026 ChetanDevv06
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
 ```

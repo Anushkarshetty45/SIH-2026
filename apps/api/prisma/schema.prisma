@@ -58,6 +58,20 @@ enum ReferralStatus {
   COMPLETED
 }
 
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  SOCKET
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
 enum AppointmentStatus {
   SCHEDULED
   CONFIRMED
@@ -156,6 +170,7 @@ model User {
   UpdatedEquipment    Equipment[]         @relation("EquipmentUpdatedBy")
   UpdatedStocks       MedicineStock[]     @relation("StockUpdatedBy")
   CreatedStockTx      StockTransaction[]  @relation("StockTransactionCreatedBy")
+  Notifications       Notification[]      @relation("UserNotifications")
 
   @@map("users")
 }
@@ -589,5 +604,29 @@ model InventoryImportBatch {
   @@index([facilityId])
   @@map("inventory_import_batches")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification (D3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id             String              @id @default(cuid())
+  recipientId    String
+  recipient      User                @relation("UserNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  title          String
+  message        String
+  channel        NotificationChannel @default(IN_APP)
+  status         NotificationStatus  @default(SENT)
+  idempotencyKey String?             @unique
+  data           Json?
+  readAt         DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([recipientId, status])
+  @@index([recipientId, createdAt])
+  @@map("notifications")
+}
+
 
 

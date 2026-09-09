@@ -594,6 +594,15 @@ Please do not commit secrets, tokens, or `.env` files.
 
 ## License
 
-A license has not yet been specified for this repository. License information will be added here once decided.
+This project is proprietary software.
 
+Copyright © 2026 ChetanDevv06. All rights reserved.
+
+The repository is publicly available for project evaluation, judging,
+review, and demonstration purposes. Public access does not grant
+permission to copy, modify, redistribute, or reuse the source code,
+architecture, implementation, or other original project materials.
+
+Any reuse beyond permitted evaluation or review requires prior written
+permission from the copyright holder.
 ```

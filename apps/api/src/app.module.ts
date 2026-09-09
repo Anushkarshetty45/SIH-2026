@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { HealthModule } from './common/health/health.module';
+import { RedisModule } from './common/redis/redis.module';
+import { QueuesModule } from './common/queues/queues.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { FacilitiesModule } from './facilities/facilities.module';
@@ -35,6 +37,8 @@ import appConfig from './config/app.config';
     // Common infrastructure
     PrismaModule,
     HealthModule,
+    RedisModule,
+    QueuesModule,
 
     // Domain modules
     AuthModule,

@@ -594,19 +594,15 @@ Please do not commit secrets, tokens, or `.env` files.
 
 ## License
 
-MIT License
+This project is proprietary software.
 
-Copyright (c) 2026 ChetanDevv06
+Copyright © 2026 ChetanDevv06. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction
+The repository is publicly available for project evaluation, judging,
+review, and demonstration purposes. Public access does not grant
+permission to copy, modify, redistribute, or reuse the source code,
+architecture, implementation, or other original project materials.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Any reuse beyond permitted evaluation or review requires prior written
+permission from the copyright holder.
 ```

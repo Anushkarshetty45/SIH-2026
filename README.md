@@ -1,4 +1,4 @@
-```markdown
+
 # Rural Healthcare Coordination Platform (RHCP)
 
 ![NestJS](https://img.shields.io/badge/backend-NestJS-e0234e?logo=nestjs&logoColor=white)

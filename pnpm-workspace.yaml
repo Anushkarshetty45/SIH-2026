@@ -7,10 +7,16 @@ allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
   bcrypt: true
+  electron: true
   prisma: true
+  hermes-engine: true
+  '@react-native/gradle-plugin': true
 
 onlyBuiltDependencies:
   - "@nestjs/core"
   - "@prisma/client"
   - "@prisma/engines"
   - "prisma"
+  - "electron"
+  - "hermes-engine"
+  - "@react-native/gradle-plugin"

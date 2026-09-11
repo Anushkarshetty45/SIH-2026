@@ -1,0 +1,148 @@
+{
+  "app": {
+    "name": "केअरग्रिड",
+    "tagline": "ग्रामीण आरोग्य समन्वय प्लॅटफॉर्म"
+  },
+  "common": {
+    "loading": "लोड होत आहे...",
+    "save": "जतन करा",
+    "cancel": "रद्द करा",
+    "confirm": "पुष्टी करा",
+    "retry": "पुन्हा प्रयत्न करा",
+    "back": "मागे",
+    "submit": "प्रस्तुत करा",
+    "search": "शोधा...",
+    "refresh": "ताजे करा",
+    "filter": "फिल्टर",
+    "all": "सर्व",
+    "actions": "कृती",
+    "status": "स्थिती",
+    "details": "तपशील",
+    "date": "तारीख",
+    "time": "वेळ",
+    "quantity": "प्रमाण",
+    "notes": "नोंदी",
+    "required": "आवश्यक",
+    "language": "भाषा",
+    "marathi": "मराठी",
+    "hindi": "हिन्दी",
+    "english": "English"
+  },
+  "auth": {
+    "login": "लॉगिन करा",
+    "logout": "बाहेर पडा",
+    "email": "ईमेल पत्ता",
+    "password": "पासवर्ड",
+    "loggingIn": "लॉगिन करत आहे...",
+    "sessionExpired": "तुमचे सत्र संपले आहे. कृपया पुन्हा लॉगिन करा.",
+    "invalidCredentials": "अवैध ईमेल किंवा पासवर्ड."
+  },
+  "connectivity": {
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "syncing": "सिंक होत आहे...",
+    "syncFailed": "सिंक अयशस्वी",
+    "lastSynced": "शेवटचे सिंक {{time}}",
+    "pendingChanges": "{{count}} प्रलंबित बदल",
+    "usingCachedData": "कॅश केलेला डेटा वापरत आहे"
+  },
+  "freshness": {
+    "current": "सद्यस्थिती",
+    "stale": "जुना डेटा",
+    "unknown": "अज्ञात स्थिती",
+    "lastUpdated": "{{time}} पूर्वी अद्यतनित",
+    "staleWarning": "सावधान: ही माहिती {{time}} पूर्वी अद्यतनित केली होती. त्वरित खात्री करा.",
+    "emergencyStaleWarning": "आणीबाणी चेतावणी: बेड/उपकरणांची माहिती जुनी आहे. पाठवण्यापूर्वी कॉल करा."
+  },
+  "roles": {
+    "ASHA_WORKER": "आशा सेविका",
+    "PHC_STAFF": "प्रा.आ.कें. कर्मचारी",
+    "DOCTOR": "डॉक्टर",
+    "FACILITY_STAFF": "रुग्णालय कर्मचारी",
+    "HOSPITAL_ADMIN": "रुग्णालय प्रशासक",
+    "AMBULANCE_STAFF": "रुग्णवाहिका कर्मचारी",
+    "SUPER_ADMIN": "मुख्य प्रशासक"
+  },
+  "navigation": {
+    "home": "मुख्यपृष्ठ",
+    "referrals": "रेफरल्स",
+    "appointments": "अपॉइंटमेंट्स",
+    "facilities": "आरोग्य केंद्र",
+    "beds": "बेड उपलब्धता",
+    "equipment": "वैद्यकीय उपकरणे",
+    "medicines": "औषधे साठा",
+    "ambulance": "रुग्णवाहिका",
+    "profile": "माझे प्रोफाईल",
+    "emergency": "आणीबाणी कक्ष"
+  },
+  "referrals": {
+    "title": "रुग्ण संदर्भ (रेफरल)",
+    "create": "नवीन रेफरल तयार करा",
+    "patient": "रुग्णाचे नाव",
+    "fromFacility": "पाठवणारे केंद्र",
+    "toFacility": "प्राप्त करणारे केंद्र",
+    "doctor": "डॉक्टर",
+    "urgency": "निकड",
+    "urgencyNormal": "सामान्य",
+    "urgencyHigh": "तातडीचे",
+    "urgencyEmergency": "अतितातडीचे / आणीबाणी",
+    "statusPending": "डॉक्टरांच्या मंजुरीची प्रतीक्षा",
+    "statusApproved": "मंजूर",
+    "statusRejected": "नाकारले",
+    "statusTimedOut": "वेळ संपली (डॉक्टरांचा प्रतिसाद आला नाही)",
+    "statusCancelled": "रद्द केले",
+    "timeoutNotice": "डॉक्टरांना प्रतिसाद देण्यासाठी ३० मिनिटांची मुदत आहे.",
+    "approve": "मंजूर करा",
+    "reject": "नाकारा",
+    "rejectionReason": "नाकारण्याचे कारण"
+  },
+  "appointments": {
+    "title": "अपॉइंटमेंट्स",
+    "book": "अपॉइंटमेंट बुक करा",
+    "selectSlot": "वेळेचा स्लॉट निवडा",
+    "slotUnavailable": "हा स्लॉट नुकताच दुसऱ्या वापरकर्त्याने बुक केला आहे. कृपया दुसरा स्लॉट निवडा.",
+    "bookedSuccess": "अपॉइंटमेंट यशस्वीरीत्या बुक झाली आहे.",
+    "statusScheduled": "नियोजित",
+    "statusConfirmed": "निश्चित",
+    "statusCompleted": "पूर्ण",
+    "statusCancelled": "रद्द",
+    "statusNoShow": "उपस्थित नाही"
+  },
+  "beds": {
+    "title": "बेड उपलब्धता",
+    "total": "एकूण बेड",
+    "available": "उपलब्ध बेड",
+    "occupied": "भरलेले बेड",
+    "categoryGeneral": "सामान्य (General)",
+    "categoryIcu": "आयसीयू (ICU)",
+    "categoryOxygen": "ऑक्सिजन (Oxygen)",
+    "categoryVentilator": "व्हेंटिलेटर (Ventilator)",
+    "categoryMaternity": "प्रसूती (Maternity)",
+    "categoryPediatric": "बालरोग (Pediatric)"
+  },
+  "equipment": {
+    "title": "उपकरणे",
+    "operational": "कार्यरत",
+    "underMaintenance": "दुरुस्ती सुरु",
+    "defective": "नादुरुस्त",
+    "unavailable": "अनुपलब्ध"
+  },
+  "medicines": {
+    "title": "औषध साठा",
+    "available": "उपलब्ध",
+    "lowStock": "कमी साठा",
+    "outOfStock": "साठा संपला",
+    "currentStock": "सध्याचा साठा: {{count}} {{unit}}",
+    "reorderLevel": "पुनर्नोंदणी स्तर: {{count}}",
+    "controlledAlternatives": "नियंत्रित पर्यायी औषधे",
+    "clinicianNotice": "हे नियंत्रित पर्याय आहेत. अंतिम निर्णय डॉक्टरांचा असेल."
+  },
+  "errors": {
+    "general": "काहीतरी चूक झाली. कृपया पुन्हा प्रयत्न करा.",
+    "network": "इंटरनेट संपर्क नाही. स्थानिक कॅश केलेला डेटा दर्शवत आहे.",
+    "unauthorized": "प्रवेश नाकारला. कृपया लॉगिन करा.",
+    "forbidden": "तुम्हाला या कृतीची परवानगी नाही.",
+    "conflict": "माहितीमध्ये तफावत/संघर्ष आढळला आहे.",
+    "notFound": "माहिती आढळली नाही."
+  }
+}

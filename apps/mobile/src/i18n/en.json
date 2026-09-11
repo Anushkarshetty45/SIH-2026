@@ -1,0 +1,148 @@
+{
+  "app": {
+    "name": "CareGrid",
+    "tagline": "Rural Healthcare Connectivity Platform"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "back": "Back",
+    "submit": "Submit",
+    "search": "Search...",
+    "refresh": "Refresh",
+    "filter": "Filter",
+    "all": "All",
+    "actions": "Actions",
+    "status": "Status",
+    "details": "Details",
+    "date": "Date",
+    "time": "Time",
+    "quantity": "Quantity",
+    "notes": "Notes",
+    "required": "Required",
+    "language": "Language",
+    "marathi": "मराठी",
+    "hindi": "हिन्दी",
+    "english": "English"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email Address",
+    "password": "Password",
+    "loggingIn": "Logging in...",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "invalidCredentials": "Invalid email or password."
+  },
+  "connectivity": {
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "syncing": "SYNCING...",
+    "syncFailed": "SYNC FAILED",
+    "lastSynced": "Last synced {{time}}",
+    "pendingChanges": "{{count}} pending changes",
+    "usingCachedData": "Using cached data"
+  },
+  "freshness": {
+    "current": "CURRENT",
+    "stale": "STALE",
+    "unknown": "UNKNOWN",
+    "lastUpdated": "Updated {{time}} ago",
+    "staleWarning": "WARNING: Availability data was last updated {{time}} ago. Verify before dispatching.",
+    "emergencyStaleWarning": "EMERGENCY WARNING: Resource availability is stale. Place a voice confirmation call before transit."
+  },
+  "roles": {
+    "ASHA_WORKER": "ASHA Worker",
+    "PHC_STAFF": "PHC Staff",
+    "DOCTOR": "Doctor",
+    "FACILITY_STAFF": "Facility Staff",
+    "HOSPITAL_ADMIN": "Hospital Admin",
+    "AMBULANCE_STAFF": "Ambulance Staff",
+    "SUPER_ADMIN": "Super Admin"
+  },
+  "navigation": {
+    "home": "Home",
+    "referrals": "Referrals",
+    "appointments": "Appointments",
+    "facilities": "Facilities",
+    "beds": "Bed Availability",
+    "equipment": "Equipment",
+    "medicines": "Medicine Stock",
+    "ambulance": "Ambulance",
+    "profile": "Profile",
+    "emergency": "Emergency Mode"
+  },
+  "referrals": {
+    "title": "Patient Referrals",
+    "create": "Create New Referral",
+    "patient": "Patient Name",
+    "fromFacility": "Referring Facility",
+    "toFacility": "Receiving Facility",
+    "doctor": "Doctor",
+    "urgency": "Urgency",
+    "urgencyNormal": "Normal",
+    "urgencyHigh": "High",
+    "urgencyEmergency": "Emergency",
+    "statusPending": "Waiting for doctor approval",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "statusTimedOut": "Doctor did not respond within required time",
+    "statusCancelled": "Cancelled",
+    "timeoutNotice": "Doctor has 30 minutes to respond.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "rejectionReason": "Rejection Reason"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "book": "Book Appointment",
+    "selectSlot": "Select Time Slot",
+    "slotUnavailable": "This slot was just booked by another user. Please choose another available slot.",
+    "bookedSuccess": "Appointment successfully booked.",
+    "statusScheduled": "Scheduled",
+    "statusConfirmed": "Confirmed",
+    "statusCompleted": "Completed",
+    "statusCancelled": "Cancelled",
+    "statusNoShow": "No Show"
+  },
+  "beds": {
+    "title": "Bed Availability",
+    "total": "Total Beds",
+    "available": "Available Beds",
+    "occupied": "Occupied Beds",
+    "categoryGeneral": "General",
+    "categoryIcu": "ICU",
+    "categoryOxygen": "Oxygen",
+    "categoryVentilator": "Ventilator",
+    "categoryMaternity": "Maternity",
+    "categoryPediatric": "Pediatric"
+  },
+  "equipment": {
+    "title": "Equipment",
+    "operational": "Operational",
+    "underMaintenance": "Under Maintenance",
+    "defective": "Defective",
+    "unavailable": "Unavailable"
+  },
+  "medicines": {
+    "title": "Medicine Inventory",
+    "available": "Available",
+    "lowStock": "Low Stock",
+    "outOfStock": "Out of Stock",
+    "currentStock": "Current Stock: {{count}} {{unit}}",
+    "reorderLevel": "Reorder Level: {{count}}",
+    "controlledAlternatives": "Controlled Alternatives",
+    "clinicianNotice": "These are controlled alternatives. Final substitution decision belongs to the clinician."
+  },
+  "errors": {
+    "general": "Something went wrong. Please try again.",
+    "network": "Network unavailable. Displaying cached data.",
+    "unauthorized": "Session expired. Please log in again.",
+    "forbidden": "You do not have permission for this action.",
+    "conflict": "Conflict detected with server state.",
+    "notFound": "Requested record not found."
+  }
+}

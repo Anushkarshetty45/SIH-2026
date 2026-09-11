@@ -1,21 +1,31 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { ReferralsController } from './referrals.controller';
 import { ReferralsService } from './referrals.service';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
+import { ReferralTimeoutScheduler } from './referral-timeout.scheduler';
 import {
-  ReferralTimeoutScheduler,
-  NoopReferralTimeoutScheduler,
-} from './referral-timeout.scheduler';
+  BullMQReferralTimeoutScheduler,
+  REFERRAL_TIMEOUT_QUEUE,
+} from './schedulers/bullmq-referral-timeout.scheduler';
+import { ReferralTimeoutProcessor } from './processors/referral-timeout.processor';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [
+    PrismaModule,
+    AuditModule,
+    BullModule.registerQueue({
+      name: REFERRAL_TIMEOUT_QUEUE,
+    }),
+  ],
   controllers: [ReferralsController],
   providers: [
     ReferralsService,
+    ReferralTimeoutProcessor,
     {
       provide: ReferralTimeoutScheduler,
-      useClass: NoopReferralTimeoutScheduler,
+      useClass: BullMQReferralTimeoutScheduler,
     },
   ],
   exports: [ReferralsService, ReferralTimeoutScheduler],
